@@ -2,6 +2,8 @@
   package="com.cliniqui">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Added permissions -->
+    <uses-permission android:name="android.permission.CAMERA" />
 
     <application
       android:name=".MainApplication"

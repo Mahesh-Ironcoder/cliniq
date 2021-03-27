@@ -10,8 +10,12 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "expo-camera": "^10.0.0",
     "react": "16.13.1",
-    "react-native": "0.63.4"
+    "react-native": "0.63.4",
+    "react-native-unimodules": "^0.12.0",
+    "react-native-web": "^0.15.1",
+    "typescript": "^4.2.3"
   },
   "devDependencies": {
     "@babel/core": "^7.8.4",
