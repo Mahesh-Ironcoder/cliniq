@@ -1,13 +1,38 @@
+import 'react-native-gesture-handler';
+
+import ThemeContextProvider from './contexts/ThemeContext';
+import AuthContextProvider, {authContext} from './contexts/AuthContext';
+
 import React from 'react';
-import {View, Text} from 'react-native';
+import {View, Text, StyleSheet} from 'react-native';
+import {NavigationContainer} from '@react-navigation/native';
+import AppNavigator from './components/AppNavigator';
+
+// console.log('From app.js', Constants.systemFonts);
+// console.log('From app.js', Camera);
 
 function App() {
+  // console.log('Status: ', status);
   return (
-    <View>
-      <Text>Hi this Mahesh</Text>
-    </View>
+    <NavigationContainer>
+      {/* <Stack.Navigator>
+        <Stack.Screen name="Home" component={Home} />
+      </Stack.Navigator> */}
+      <ThemeContextProvider>
+        <AuthContextProvider>
+          <AppNavigator />
+        </AuthContextProvider>
+      </ThemeContextProvider>
+    </NavigationContainer>
   );
 }
+
+const appStyles = StyleSheet.create({
+  cameraStyle: {
+    width: '100%',
+    height: '100%',
+  },
+});
 
 export default App;
 
