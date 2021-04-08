@@ -134,6 +134,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+
+        //for RN camera package
+        missingDimensionStrategy 'react-native-camera', 'general' // <--- inserted this line
     }
     splits {
         abi {
@@ -179,10 +182,6 @@ android {
         }
     }
 
-    // react native mmkv requires
-    packagingOptions {
-        pickFirst '**/*.so'
-    }
 }
 
 dependencies {

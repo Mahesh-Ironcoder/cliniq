@@ -2,12 +2,11 @@ import 'react-native-gesture-handler';
 
 import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
-import {Camera} from 'expo-camera';
-import * as FaceDetector from 'expo-face-detector';
+import {RNCamera, FaceDetector} from 'react-native-camera';
 
 const CustomCamera = () => {
   const [hasPermissions, setHasPermissions] = React.useState(false);
-  const [boundsR, setBoundsR] = React.useState("");
+  const [boundsR, setBoundsR] = React.useState('');
 
   const handleDetections = ({faces}) => {
     console.log('BoundsR: ', faces);
@@ -40,8 +39,8 @@ const CustomCamera = () => {
   }
   return (
     <View style={cameraStyles.camContainer}>
-      <Camera
-        type={Camera.Constants.Type.front}
+      <RNCamera
+        type="front"
         style={cameraStyles.cam}
         onFacesDetected={(d) => {
           console.log('S F D');
@@ -57,7 +56,6 @@ const CustomCamera = () => {
         onFacesDetectedError={(e) => {
           console.log('Error: ', e);
         }}
-        autoFocus={Camera.Constants.AutoFocus}
       />
       <View
         style={{
