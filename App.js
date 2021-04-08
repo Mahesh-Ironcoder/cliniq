@@ -2,22 +2,19 @@ import 'react-native-gesture-handler';
 
 import ThemeContextProvider from './contexts/ThemeContext';
 import AuthContextProvider, {authContext} from './contexts/AuthContext';
-
-import React from 'react';
-import {View, Text, StyleSheet} from 'react-native';
-import {NavigationContainer} from '@react-navigation/native';
 import AppNavigator from './components/AppNavigator';
 
-// console.log('From app.js', Constants.systemFonts);
-// console.log('From app.js', Camera);
+import React from 'react';
+import {StyleSheet, StatusBar} from 'react-native';
+import {NavigationContainer} from '@react-navigation/native';
 
 function App() {
-  // console.log('Status: ', status);
+  React.useEffect(() => {
+    StatusBar.setTranslucent(true);
+    StatusBar.setBackgroundColor('transparent');
+  });
   return (
     <NavigationContainer>
-      {/* <Stack.Navigator>
-        <Stack.Screen name="Home" component={Home} />
-      </Stack.Navigator> */}
       <ThemeContextProvider>
         <AuthContextProvider>
           <AppNavigator />

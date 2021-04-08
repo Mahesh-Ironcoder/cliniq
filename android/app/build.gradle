@@ -178,6 +178,11 @@ android {
 
         }
     }
+
+    // react native mmkv requires
+    packagingOptions {
+        pickFirst '**/*.so'
+    }
 }
 
 dependencies {
