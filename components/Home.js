@@ -1,5 +1,12 @@
 import React from 'react';
-import {View, Text, DrawerLayoutAndroid, StyleSheet} from 'react-native';
+import {
+  View,
+  Text,
+  DrawerLayoutAndroid,
+  StyleSheet,
+  Modal,
+  Pressable,
+} from 'react-native';
 import {authContext} from '../contexts/AuthContext';
 
 import {useIsFocused} from '@react-navigation/core';
@@ -10,19 +17,16 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import {RNCamera} from 'react-native-camera';
 
 const Home = (props) => {
-  const {username, password, token, authDispatch} = React.useContext(
-    authContext,
-  );
+  const {biometricsSet, authDispatch} = React.useContext(authContext);
+
   const [drawerPosition, setDrawerPosition] = React.useState('left');
-  const isFocused = useIsFocused();
-  const handleLogout = () => {
-    authDispatch({type: 'logout'});
-  };
+  const [type, setType] = React.useState(RNCamera.Constants.Type.front);
 
   const camRef = React.useRef(null);
   const drawerRef = React.useRef(null);
 
-  const [type, setType] = React.useState(RNCamera.Constants.Type.front);
+  const isFocused = useIsFocused();
+
   const openDrawer = () => {
     if (drawerRef) {
       drawerRef.current.openDrawer();
@@ -30,6 +34,7 @@ const Home = (props) => {
       console.log('no drawer');
     }
   };
+
   const drawerNavigationView = () => {
     return (
       <View style={homescreenStyles.drawerNavigationStyles}>
@@ -48,14 +53,27 @@ const Home = (props) => {
       </View>
     );
   };
+
   const handleFlip = () => {
     console.log('enter cam ref ');
+    authDispatch({type: 'loading', payload: true});
     setType(
       type === RNCamera.Constants.Type.front
         ? RNCamera.Constants.Type.back
         : RNCamera.Constants.Type.front,
     );
+    authDispatch({type: 'loading', payload: false});
   };
+
+  const handleLogout = () => {
+    authDispatch({type: 'loading', payload: true});
+    authDispatch({type: 'logout'});
+  };
+
+  const handleModalActions = (ma) => {
+    authDispatch({type: 'biometrics', payload: ma});
+  };
+
   if (isFocused) {
     return (
       <DrawerLayoutAndroid
@@ -63,6 +81,32 @@ const Home = (props) => {
         drawerPosition={drawerPosition}
         draweWidth={300}
         renderNavigationView={drawerNavigationView}>
+        {/* <Modal
+          animationType="slide"
+          visible={!biometricsSet}
+          onRequestClose={() => {
+            console.info('Home modal asked and closed');
+          }}>
+          <Text>Fast-Authentication</Text>
+          <Text>
+            Set password free authentication with your device fingerprint or
+            faceeId
+          </Text>
+          <View>
+            <Pressable
+              onPress={() => {
+                handleModalActions(true);
+              }}>
+              <Text>ok</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                handleModalActions(false);
+              }}>
+              <Text>Not now</Text>
+            </Pressable>
+          </View>
+        </Modal> */}
         <View style={homescreenStyles.homeContainer}>
           <CustomCamera ref={camRef} variant={type} />
           <View style={homescreenStyles.hmBtnGrp}>

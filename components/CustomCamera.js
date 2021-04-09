@@ -5,20 +5,27 @@ import {View, StyleSheet} from 'react-native';
 import {RNCamera, FaceDetector} from 'react-native-camera';
 
 const CustomCamera = React.forwardRef((props, ref) => {
-  // const [hasPermissions, setHasPermissions] = React.useState(false);
-  const [boundsR, setBoundsR] = React.useState('');
+  const [detections, setDetections] = React.useState([]);
 
-  const handleDetections = React.useCallback(
-    ({faces}) => {
-      // console.log('BoundsR: ', faces);
-      try {
-        setBoundsR({...faces[0].bounds});
-      } catch (e) {
-        console.log('handle Detection error;', e);
-      }
-    },
-    [boundsR],
-  );
+  // const handleDetections = React.useCallback(
+  //   ({faces}) => {
+  //     console.log('detections: ', faces);
+  //     try {
+  //       setDetections([...faces]);
+  //     } catch (e) {
+  //       console.log('handle Detection error;', e);
+  //     }
+  //   },
+  //   [detections],
+  // );
+  const handleDetections = ({faces}) => {
+    // console.log('detections: ', faces);
+    try {
+      setDetections([...faces]);
+    } catch (e) {
+      console.log('handle Detection error;', e);
+    }
+  };
 
   // React.useEffect(() => {
   //   (async () => {
@@ -36,36 +43,17 @@ const CustomCamera = React.forwardRef((props, ref) => {
   //   })();
   // }, []);
 
-  React.useEffect(() => {
-    // console.log('Cam rendered');
-    // (async () => {
-    //   try {
-    //     if (ref && ref !== null) {
-    //       let ratio = await ref.current.getSupportedRatiosAsync();
-    //       console.log('Ratio: ', ratio);
-    //       // setCamOptions({ratio: ratio.reverse()[0]});
-    //     } else {
-    //       console.info('NO ref');
-    //     }
-    //   } catch (e) {
-    //     console.error('@CustomeCamera: Error - ', e);
-    //   }
-    // })();
-    return () => {
-      setBoundsR('');
-    };
-  });
+  // React.useEffect(() => {
+  //   return () => {
+  //     setDetections([]);
+  //   };
+  // }, [detections]);
 
   return (
     <View style={cameraStyles.camContainer}>
       <RNCamera
         ref={ref}
         type={props.variant}
-        // ratio={
-        //   camOptions !== undefined && camOptions !== null
-        //     ? camOptions.ratio
-        //     : '4:3'
-        // }
         style={cameraStyles.cam}
         whiteBalance={RNCamera.Constants.WhiteBalance.auto}
         onFacesDetected={(d) => {
@@ -95,16 +83,23 @@ const CustomCamera = React.forwardRef((props, ref) => {
           buttonNegative: 'Cancel',
         }}
       />
-      <View
-        style={{
-          borderWidth: 2,
-          borderColor: 'red',
-          position: 'absolute',
-          top: boundsR ? boundsR.origin.y - 50 : 0,
-          left: boundsR ? boundsR.origin.x - 50 : 0,
-          width: boundsR ? boundsR.size.width : 0,
-          height: boundsR ? boundsR.size.height : 0,
-        }}></View>
+
+      {detections.map((face, id) => {
+        return (
+          <View
+            key={id}
+            style={{
+              borderWidth: 2,
+              borderColor: 'red',
+              position: 'absolute',
+              top: face.bounds.origin.y - 25,
+              left: face.bounds.origin.x - 60,
+              width: face.bounds.size.width + 50,
+              height: face.bounds.size.height + 25,
+            }}
+          />
+        );
+      })}
     </View>
   );
 });

@@ -24,7 +24,11 @@ const Login = (props) => {
 
   const handleLogin = () => {
     if (userName !== '' && password !== '') {
-      authDispatch({type: 'login', payload: {userName, password}});
+      authDispatch({type: 'loading', payload: true});
+      authDispatch({
+        type: 'login',
+        payload: {userName, password, local: false},
+      });
     } else {
       Alert.alert('Please fill, both username and password');
     }
@@ -56,7 +60,7 @@ const Login = (props) => {
           <Pressable>
             <Text
               onPress={() => {
-                navigation.navigate('reset');
+                navigation.navigate('Reset');
               }}>
               Forgot password?
             </Text>
@@ -64,7 +68,7 @@ const Login = (props) => {
           <Pressable>
             <Text
               onPress={() => {
-                navigation.navigate('newAccount');
+                navigation.navigate('NewAccount');
               }}>
               Create Account
             </Text>
@@ -113,7 +117,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     fontSize: 16,
-    color: PlatformColor('')
+    color: PlatformColor(''),
   },
 });
 export default Login;

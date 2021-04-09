@@ -7,31 +7,35 @@ export const authContext = createContext(null);
 
 const initialState = {
   status: false,
-  token: null,
-  username: '',
-  password: '',
-  expiration: 0,
-  splash: true,
+  user: {
+    token: null,
+    username: '',
+    password: '',
+    expiration: 0,
+  },
   authenicatedLocally: false,
-  biometricsSet: true,
-  local: 'false',
+  biometricsSet: false,
+  loading: false,
+  local: false,
 };
 
-
-
 function reducer(state, action) {
-  // console.log('Reducer init: ', state);
   switch (action.type) {
     case 'login':
       let token = action.payload.token || 'dummy-user-token';
-      let user = {
+      let nextState = {
         ...state,
-        ...action.payload,
         status: true,
-        token,
+        user: {
+          username: action.payload.username,
+          password: action.payload.password,
+          expiration: Date.now() + 3600000,
+          token,
+        },
+        loading: false,
       };
       if (!action.payload.local) {
-        AsyncStorage.setItem('_user', JSON.stringify(user))
+        AsyncStorage.setItem('_user', JSON.stringify(nextState))
           .then((e) => {
             console.log('setItem', e);
           })
@@ -42,7 +46,7 @@ function reducer(state, action) {
             );
           });
       }
-      return {...user};
+      return {...nextState};
     case 'logout':
       AsyncStorage.removeItem('_user').catch((e) => {
         console.error(
@@ -51,10 +55,10 @@ function reducer(state, action) {
         );
       });
       return initialState;
-    case 'splash':
-      return {...state, splash: action.payload};
-    case 'setUser':
-      return {...state, ...action.payload};
+    case 'biometrics':
+      return {...state, biometricsSet: action.payload, loading: false};
+    case 'loading':
+      return {...state, loading: action.payload};
     default:
       return state;
   }
@@ -64,13 +68,6 @@ const AuthContextProvider = (props) => {
   const [authState, authDispatch] = useReducer(reducer, initialState);
 
   React.useEffect(() => {
-    // console.log('IN effect before IA');
-    // console.log(
-    //   '\n\n---------------\n',
-    //   InitializeAuth(initialState, 'effect'),
-    //   '\n\n---------------',
-    // );
-    // console.log('IN effect after IA');
     AsyncStorage.getItem('_user')
       .then((value) => {
         if (value !== null) {
@@ -79,7 +76,8 @@ const AuthContextProvider = (props) => {
               if (st.success) {
                 authDispatch({type: 'login', payload: {...value, local: true}});
               } else {
-                authDispatch({type: 'logout'});
+                console.log('Not verified');
+                // authDispatch({type: 'logout'})
               }
             })
             .catch((e) => {
@@ -90,7 +88,6 @@ const AuthContextProvider = (props) => {
       .catch((e) => {
         console.error('Error in auth effect: ', e);
       });
-    // console.info('authcontext state: ', authState);
   }, []);
 
   return (
@@ -101,89 +98,3 @@ const AuthContextProvider = (props) => {
 };
 
 export default AuthContextProvider;
-
-// const isUserLoggedIn = () => {
-//   const authUser = isUserAvailable();
-//   if (authUser !== null) {
-//     if (authUser.biometricsSet) {
-//       const resp = authenticateWithBiometrics();
-//       if (resp.success) {
-//         login({username: auth});
-//       }
-//     }
-//   }
-// };
-
-// const login = (creds) => {
-//   /** Verify the creds with server and get a token
-//    * token = fetchTokenFromServer()
-//    * store the token in the secure storage for accessing and create a session
-//    */
-
-//   const authUser = isUser;
-//   Available();
-//   if (authUser !== null) {
-//     if (authUser.biometricsSet) {
-//       const resp = authenticateWithBiometrics();
-//       if (resp.success) {
-//         login({username: auth});
-//       }
-//     }
-//   }
-
-//   let token;
-//   if (creds.hasOwnProperty('userToken')) {
-//     token = creds.userToken;
-//   } else {
-//     token = 'dummy-user-token';
-//   }
-//   if (token !== null) {
-//     AsyncStorage.setItem(
-//       'user',
-//       JSON.stringify({userToken: token, userId: 'user-Id'}),
-//     )
-//       .then((stStatus) => {
-//         console.log(stStatus);
-//       })
-//       .catch((e) => {
-//         console.log('Error in setting the value: ', e);
-//       });
-//     setAuthentication({
-//       ...authentication,
-//       status: true,
-//       username: creds.user,
-//       password: creds.pass,
-//       token,
-//     });
-//   } else {
-//     setAuthentication(initialState);
-//   }
-// };
-
-// const logout = () => {
-//   /** Logout the current user and clear all the sessions related to that user */
-//   AsyncStorage.removeItem('user')
-//     .then((stStatus) => {
-//       console.log(stStatus);
-//     })
-//     .catch((e) => {
-//       console.log('Error in removing the value: ', e);
-//     });
-//   setAuthentication(initialState);
-// };
-
-// React.useEffect(() => {
-//   console.log('effect from auth context:');
-//   AsyncStorage.getItem('user').then((resp) => {
-//     if (null) {
-//       setSplash({user: undefined, screen: false});
-//     }
-//     console.log('user Initial:', resp);
-//     setSplash({screen: false, user: resp});
-//     login(resp);
-//   });
-//   // .catch((e) => {
-//   //   setSplash({user: undefined, screen: false});
-//   //   console.log('Inital fetch failed: ', e);
-//   // });
-// }, []);
