@@ -1,15 +1,24 @@
 import React from 'react';
 import {Pressable, Text, PlatformColor} from 'react-native';
 
-const AppButton = ({title, style, textStyle, rounded, defaultStyle}) => {
+const AppButton = ({
+  title,
+  onPress,
+  style,
+  textStyle,
+  rounded,
+  defaultStyle,
+  defaultTextStyle,
+}) => {
   return (
     <Pressable
       style={[
         defaultStyle,
         style,
         rounded === true && {borderRadius: 10, overflow: 'hidden'},
-      ]}>
-      <Text style={textStyle}>{title}</Text>
+      ]}
+      onPress={onPress}>
+      <Text style={[textStyle, defaultTextStyle]}>{title}</Text>
     </Pressable>
   );
 };
@@ -19,7 +28,7 @@ AppButton.defaultProps = {
     width: 100,
     backgroundColor: PlatformColor('?android:attr/colorPrimary'),
   },
-  textStyle: {
+  defaultTextStyle: {
     textAlign: 'center',
     padding: 8,
   },

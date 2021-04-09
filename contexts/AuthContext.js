@@ -17,43 +17,12 @@ const initialState = {
   local: 'false',
 };
 
-// function isUserAvailable() {
-//   console.log('Enter is user');
-//   return AsyncStorage.getItem('_user');
-// }
 
-// const InitializeAuth = (initalstate) => {
-//   console.log('Enter IA');
-//   let user = undefined;
-//   AsyncStorage.getItem('_user')
-//     .then((resp) => {
-//       user = JSON.parse(resp);
-//     })
-//     .catch((e) => {
-//       console.error(
-//         'AuthContext - InitAuth: Error in getting the user value...\n ',
-//         e,
-//       );
-//     });
-//   while (user === undefined) {
-//     let a = 1;
-//     console.log(a);
-//     a = a + 1;
-//   }
-//   console.log('Exiting IA');
-//   return user !== null ? {...initalstate, ...user} : {...initalstate};
-// };
 
 function reducer(state, action) {
   // console.log('Reducer init: ', state);
   switch (action.type) {
     case 'login':
-      // if (state.token !== null && Date.now() > state.expiration) {
-      //   return {...state};
-      // }
-      // let username = action.payload.user;
-      // let password = action.payload.pass;
-      // let token = authWithServer(user, pass);
       let token = action.payload.token || 'dummy-user-token';
       let user = {
         ...state,
@@ -105,7 +74,17 @@ const AuthContextProvider = (props) => {
     AsyncStorage.getItem('_user')
       .then((value) => {
         if (value !== null) {
-          authDispatch({type: 'login', payload: {...value, local: true}});
+          ReactNativeBiometrics.simplePrompt({promptMessage: 'Authenticate'})
+            .then((st) => {
+              if (st.success) {
+                authDispatch({type: 'login', payload: {...value, local: true}});
+              } else {
+                authDispatch({type: 'logout'});
+              }
+            })
+            .catch((e) => {
+              console.error('@AuthContext - biometrics: Error ', e);
+            });
         }
       })
       .catch((e) => {

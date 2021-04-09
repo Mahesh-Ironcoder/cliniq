@@ -9,13 +9,18 @@ import {
   StyleSheet,
   Alert,
   SliderComponent,
+  PlatformColor,
 } from 'react-native';
+import AppButton from './AppButton';
+import Pressable from 'react-native/Libraries/Components/Pressable/Pressable';
 
 const Login = (props) => {
   const [userName, setUserName] = React.useState('');
   const [password, setPassword] = React.useState('');
 
   const {authDispatch} = React.useContext(authContext);
+
+  const {navigation} = props;
 
   const handleLogin = () => {
     if (userName !== '' && password !== '') {
@@ -41,7 +46,30 @@ const Login = (props) => {
           onChangeText={(text) => setPassword(text)}
           style={styles.inputStyle}
         />
-        <Button title="Login" onPress={handleLogin} style={styles.loginBtn} />
+        <AppButton
+          title="Login"
+          onPress={handleLogin}
+          style={styles.loginBtn}
+          textStyle={styles.loginText}
+        />
+        <View style={styles.extraOptionStyles}>
+          <Pressable>
+            <Text
+              onPress={() => {
+                navigation.navigate('reset');
+              }}>
+              Forgot password?
+            </Text>
+          </Pressable>
+          <Pressable>
+            <Text
+              onPress={() => {
+                navigation.navigate('newAccount');
+              }}>
+              Create Account
+            </Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
@@ -73,7 +101,19 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   loginBtn: {
+    width: '50%',
+    backgroundColor: '#3f51b5',
+  },
+  loginText: {
+    color: '#fff',
+  },
+  extraOptionStyles: {
+    marginTop: 24,
     width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    fontSize: 16,
+    color: PlatformColor('')
   },
 });
 export default Login;

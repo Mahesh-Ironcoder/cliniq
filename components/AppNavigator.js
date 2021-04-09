@@ -1,6 +1,8 @@
 import React from 'react';
 import Login from './Login';
 import Home from './Home';
+import CreateAccount from './CreateAccount';
+import ResetPassword from './ResetPassword';
 import {authContext} from '../contexts/AuthContext';
 
 import {createStackNavigator} from '@react-navigation/stack';
@@ -16,7 +18,11 @@ function AppNavigator(props) {
       {auth.status ? (
         <Stack.Screen name="Home" component={Home} />
       ) : (
-        <Stack.Screen name="Login" component={Login} />
+        <>
+          <Stack.Screen name="Login" component={Login} />
+          <Stack.Screen name="reset" component={ResetPassword} />
+          <Stack.Screen name="newAccount" component={CreateAccount} />
+        </>
       )}
       {/* </View> */}
     </Stack.Navigator>

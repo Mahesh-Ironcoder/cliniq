@@ -12,6 +12,7 @@ function App() {
   React.useEffect(() => {
     StatusBar.setTranslucent(true);
     StatusBar.setBackgroundColor('transparent');
+    StatusBar.setBarStyle('dark-content');
   });
   return (
     <NavigationContainer>
