@@ -112,7 +112,7 @@ const AuthContextProvider = (props) => {
           } else {
             // authDispatch({type: 'biometricsSet', payload: {...value.biometricsSet, askModal:true}})
             // setAskModal(true);
-            console.log('biometrics are set');
+            console.log('biometrics are not set');
           }
         }
       })

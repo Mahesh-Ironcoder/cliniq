@@ -4,9 +4,15 @@ import Scanning from './Scanning';
 import {authContext} from '../contexts/AuthContext';
 
 import React from 'react';
-import {View, Text, DrawerLayoutAndroid, StyleSheet} from 'react-native';
+import {
+  View,
+  Text,
+  DrawerLayoutAndroid,
+  StyleSheet,
+  Image,
+  StatusBar,
+} from 'react-native';
 
-import {RNCamera} from 'react-native-camera';
 import {useIsFocused} from '@react-navigation/core';
 
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -16,9 +22,8 @@ import ProgressBar from './ProgressBar';
 
 const Home = (props) => {
   const {biometricsSet, authDispatch} = React.useContext(authContext);
-
-  const [type, setType] = React.useState(RNCamera.Constants.Type.front);
-  const [askModel, setAskModel] = React.useState(!biometricsSet.status);
+  const [isScanning, setIsScanning] = React.useState(false);
+  // const [askModel, setAskModel] = React.useState(!biometricsSet.status);
   // const [progress, setProgress] = React.useState(0);
 
   const camRef = React.useRef(null);
@@ -54,17 +59,6 @@ const Home = (props) => {
     );
   };
 
-  const handleFlip = () => {
-    console.log('enter cam ref ');
-    authDispatch({type: 'loading', payload: true});
-    setType(
-      type === RNCamera.Constants.Type.front
-        ? RNCamera.Constants.Type.back
-        : RNCamera.Constants.Type.front,
-    );
-    authDispatch({type: 'loading', payload: false});
-  };
-
   const handleLogout = () => {
     authDispatch({type: 'loading', payload: true});
     authDispatch({type: 'logout'});
@@ -72,50 +66,26 @@ const Home = (props) => {
 
   const handleScan = () => {
     console.log('Handling scan: ');
-    // camRef.current.pausePreview();
-    // for (let i = 0; i < 10; i++) {
-    //   let img = camRef.current
-    //     .takePictureAsync({pauseAfterCapture: true})
-    //     .then((res) => {
-    //       console.log('\n\n--------------------------------------\n');
-    //       console.log('image result: ', res);
-    //       console.log('\n\n--------------------------------------\n');
-    //       return res;
-    //     })
-    //     .catch((e) => {
-    //       console.log('error in taking picture: ', e);
-    //       return e;
-    //     });
-    // }
-    let img = camRef.current
-      .recordAsync({pauseAfterCapture: true})
-      .then((res) => {
-        console.log('\n\n--------------------------------------\n');
-        console.log('image result: ', res);
-        console.log('\n\n--------------------------------------\n');
-        return res;
-      })
-      .catch((e) => {
-        console.log('error in taking picture: ', e);
-        return e;
-      });
-
+    setIsScanning(true);
     camRef.current.resumePreview();
+    setTimeout(() => {
+      setIsScanning(false);
+    }, 5000);
   };
 
-  const handleModalActions = (ma) => {
-    console.log('handleModalActions');
+  // const handleModalActions = (ma) => {
+  //   console.log('handleModalActions');
 
-    if (ma) {
-      authDispatch({type: 'biometrics', payload: {status: true, askAgain: 0}});
-    } else {
-      authDispatch({
-        type: 'biometrics',
-        payload: {status: false, askAgain: Date.now() + 86400000},
-      });
-    }
-    setAskModel(false);
-  };
+  //   if (ma) {
+  //     authDispatch({type: 'biometrics', payload: {status: true, askAgain: 0}});
+  //   } else {
+  //     authDispatch({
+  //       type: 'biometrics',
+  //       payload: {status: false, askAgain: Date.now() + 86400000},
+  //     });
+  //   }
+  //   setAskModel(false);
+  // };
 
   if (isFocused) {
     return (
@@ -125,37 +95,28 @@ const Home = (props) => {
         draweWidth={300}
         renderNavigationView={drawerNavigationView}>
         <View style={homescreenStyles.homeContainer}>
-          <CustomCamera ref={camRef} variant={type} />
-          <View style={homescreenStyles.hmBtnGrp}>
-            <AppButton
-              style={{flexBasis: 200}}
-              title="Start Scan"
-              rounded
-              onPress={handleScan}
-            />
-            <Icon.Button
-              name="camera-rear"
-              size={25}
-              backgroundColor="#fff"
-              color="#000"
-              onPress={handleFlip}>
-              Flip
-            </Icon.Button>
-          </View>
-          <ProgressBar
-            ref={progressRef}
-            width={200}
-            style={{position: 'absolute', top: 50}}
+          <CustomCamera
+            ref={camRef}
+            onScan={handleScan}
+            hideControls={isScanning}
           />
-          {/* <Scanning /> */}
-
-          <Icon
+          {isScanning ? (
+            <>
+              <ProgressBar
+                ref={progressRef}
+                width={200}
+                style={{position: 'absolute', top: 50}}
+              />
+              <Scanning />
+            </>
+          ) : null}
+          {/* <Icon
             name="expand-less"
             size={30}
             color="#fff"
             style={homescreenStyles.drawer}
             onPress={openDrawer}
-          />
+          /> */}
         </View>
       </DrawerLayoutAndroid>
     );
