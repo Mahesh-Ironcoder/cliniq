@@ -1,6 +1,8 @@
 import React from 'react';
 import {Pressable, Text, PlatformColor} from 'react-native';
 
+//--------------------------Done with imports-----------------------------------------------------
+
 const AppButton = ({
   title,
   onPress,

@@ -1,18 +1,22 @@
-import React from 'react';
 import Login from './Login';
 import Home from './Home';
 import CreateAccount from './CreateAccount';
 import ResetPassword from './ResetPassword';
 import {authContext} from '../contexts/AuthContext';
 
+import React from 'react';
+
+import {StyleSheet, ActivityIndicator} from 'react-native';
+
 import {createStackNavigator} from '@react-navigation/stack';
-import {View, StyleSheet, ActivityIndicator} from 'react-native';
+
+//--------------------------Done with imports-----------------------------------------------------
 
 const Stack = createStackNavigator();
 
 function AppNavigator(props) {
   const auth = React.useContext(authContext);
-  console.log('nav:', auth);
+  // console.log('nav:', auth);
   return (
     <>
       <Stack.Navigator screenOptions={{headerShown: false}}>

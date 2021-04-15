@@ -1,18 +1,19 @@
+import AppButton from './AppButton';
 import {authContext} from '../contexts/AuthContext';
 
 import React from 'react';
+
 import {
   View,
   Text,
-  Button,
+  Pressable,
   TextInput,
   StyleSheet,
   Alert,
-  SliderComponent,
   PlatformColor,
 } from 'react-native';
-import AppButton from './AppButton';
-import Pressable from 'react-native/Libraries/Components/Pressable/Pressable';
+
+//--------------------------Done with imports-----------------------------------------------------
 
 const Login = (props) => {
   const [userName, setUserName] = React.useState('');

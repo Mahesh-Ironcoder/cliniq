@@ -1,8 +1,10 @@
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
+import { FaceDetector, RNCamera } from 'react-native-camera';
 import 'react-native-gesture-handler';
 
-import React from 'react';
-import {View, StyleSheet} from 'react-native';
-import {RNCamera, FaceDetector} from 'react-native-camera';
+
+//--------------------------Done with imports-----------------------------------------------------
 
 const CustomCamera = React.forwardRef((props, ref) => {
   const [detections, setDetections] = React.useState([]);
@@ -21,9 +23,12 @@ const CustomCamera = React.forwardRef((props, ref) => {
   const handleDetections = ({faces}) => {
     // console.log('detections: ', faces);
     try {
+      if (faces.length === 0) {
+        setDetections([]);
+      }
       setDetections([...faces]);
     } catch (e) {
-      console.log('handle Detection error;', e);
+      console.log('handle Detections error;', e);
     }
   };
 
@@ -90,7 +95,7 @@ const CustomCamera = React.forwardRef((props, ref) => {
             key={id}
             style={{
               borderWidth: 2,
-              borderColor: 'red',
+              borderColor: 'green',
               position: 'absolute',
               top: face.bounds.origin.y - 25,
               left: face.bounds.origin.x - 60,

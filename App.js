@@ -8,6 +8,8 @@ import React from 'react';
 import {StyleSheet, StatusBar} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
 
+//--------------------------Done with imports-----------------------------------------------------
+
 function App() {
   React.useEffect(() => {
     StatusBar.setTranslucent(true);
