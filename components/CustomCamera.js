@@ -1,58 +1,39 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import { FaceDetector, RNCamera } from 'react-native-camera';
+import {StyleSheet, View} from 'react-native';
+import {FaceDetector, RNCamera} from 'react-native-camera';
 import 'react-native-gesture-handler';
-
 
 //--------------------------Done with imports-----------------------------------------------------
 
 const CustomCamera = React.forwardRef((props, ref) => {
   const [detections, setDetections] = React.useState([]);
 
-  // const handleDetections = React.useCallback(
-  //   ({faces}) => {
-  //     console.log('detections: ', faces);
-  //     try {
-  //       setDetections([...faces]);
-  //     } catch (e) {
-  //       console.log('handle Detection error;', e);
-  //     }
-  //   },
-  //   [detections],
-  // );
   const handleDetections = ({faces}) => {
-    // console.log('detections: ', faces);
     try {
-      if (faces.length === 0) {
-        setDetections([]);
-      }
-      setDetections([...faces]);
+      setDetections((prevState) => {
+        let currentFaces = [];
+
+        if (
+          prevState.length === currentFaces.length &&
+          prevState.every((v, i) => v === currentFaces[i])
+        ) {
+          currentFaces = faces;
+        }
+        return [...currentFaces];
+      });
     } catch (e) {
       console.log('handle Detections error;', e);
     }
   };
 
   // React.useEffect(() => {
-  //   (async () => {
-  //     try {
-  //       if (ref && ref !== null) {
-  //         let ratio = await ref.current.getSupportedRatiosAsync();
-  //         console.log('Ratio: ', ratio);
-  //         setCamOptions({ratio: ratio.reverse()[0]});
-  //       } else {
-  //         console.info('NO ref');
-  //       }
-  //     } catch (e) {
-  //       console.error('@CustomeCamera: Error - ', e);
-  //     }
-  //   })();
-  // }, []);
-
-  // React.useEffect(() => {
-  //   return () => {
-  //     setDetections([]);
-  //   };
-  // }, [detections]);
+  //   setDetections((prevState) => {
+  //     return prevState.length === detections.length &&
+  //       prevState.every((v, i) => v === detections[i])
+  //       ? []
+  //       : [...detections];
+  //   });
+  // });
 
   return (
     <View style={cameraStyles.camContainer}>
