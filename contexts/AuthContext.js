@@ -86,7 +86,7 @@ function reducer(state, action) {
 const AuthContextProvider = (props) => {
   const [authState, authDispatch] = useReducer(reducer, initialState);
   const [askModal, setAskModal] = React.useState(authState.biometricsSet);
-  React.useEffect(() => { 
+  React.useEffect(() => {
     AsyncStorage.getItem('_user')
       .then((value) => {
         if (value !== null) {
@@ -111,19 +111,20 @@ const AuthContextProvider = (props) => {
               });
           } else {
             // authDispatch({type: 'biometricsSet', payload: {...value.biometricsSet, askModal:true}})
-            setAskModal(true);
+            // setAskModal(true);
+            console.log('biometrics are set');
           }
         }
       })
       .catch((e) => {
         console.error('Error in auth effect: ', e);
       });
-  }, [askModal]);
+  },[]);
 
   return (
     <authContext.Provider value={{...authState, authDispatch}}>
       {props.children}
-      <Modal
+      {/* <Modal
         animationType="slide"
         visible={askModal}
         onRequestClose={() => {
@@ -154,7 +155,7 @@ const AuthContextProvider = (props) => {
             </Pressable>
           </View>
         </View>
-      </Modal>
+      </Modal> */}
     </authContext.Provider>
   );
 };
