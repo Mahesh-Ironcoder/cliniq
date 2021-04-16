@@ -64,13 +64,17 @@ const Home = (props) => {
     authDispatch({type: 'logout'});
   };
 
+  const handleReTest = () => {
+    setIsScanning(false);
+  };
+
   const handleScan = () => {
     console.log('Handling scan: ');
     setIsScanning(true);
     // camRef.current.resumePreview();
-    setTimeout(() => {
-      setIsScanning(false);
-    }, 10000);
+    // setTimeout(() => {
+    //   setIsScanning(false);
+    // }, 10000);
   };
 
   // const handleModalActions = (ma) => {
@@ -100,7 +104,7 @@ const Home = (props) => {
             onScan={handleScan}
             hideControls={isScanning}
           />
-          {isScanning ? <VitalsCardContainer /> : null}
+          {isScanning ? <VitalsCardContainer onReTest={handleReTest} /> : null}
           {/* <Icon
             name="expand-less"
             size={30}

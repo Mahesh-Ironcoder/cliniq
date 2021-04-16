@@ -27,6 +27,7 @@ const FullVitals = (props) => {
             style={styles.btn}
             textStyle={styles.btnText}
             rounded
+            onPress={props.onReTest}
           />
         </View>
       </View>

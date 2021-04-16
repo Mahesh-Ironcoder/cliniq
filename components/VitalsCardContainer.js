@@ -31,9 +31,35 @@ const idata = {
   Temperature3: null,
 };
 
-const VitalsCardContainer = () => {
+const reducer = (prevState, action) => {
+  switch (action.type) {
+    case 'set':
+      return {loading: false, vitals: {...action.payload}};
+    case 'reset':
+      return {loading: true, vitals: idata};
+    default:
+      return prevState;
+  }
+};
+
+const VitalsCardContainer = (props) => {
   const [loading, setLoading] = React.useState(true);
   const [vitals, setVitals] = React.useState(idata);
+  // const [state, dispatch] = React.useReducer(reducer, {
+  //   loading: true,
+  //   vitals: idata,
+  // });
+
+  React.useEffect(() => {
+    setTimeout(() => {
+      // dispatch({type: 'set', payload: data});
+      setLoading(false);
+      setVitals(data);
+    }, 3000);
+    // return () => {
+    //   dispatch({type: 'reset'});
+    // };
+  }, [vitals]);
 
   const screen = useWindowDimensions();
   const drawerAnim = React.useState(new Animated.Value(0))[0];
@@ -52,13 +78,6 @@ const VitalsCardContainer = () => {
       useNativeDriver: true,
     }).start();
   };
-
-  React.useEffect(() => {
-    setTimeout(() => {
-      setLoading(false);
-      setVitals(data);
-    }, 3000);
-  }, [vitals]);
 
   return (
     <>
@@ -109,7 +128,13 @@ const VitalsCardContainer = () => {
           onPress={slideDown}
         />
 
-        <FullVitals data={vitals} />
+        <FullVitals
+          data={vitals}
+          onReTest={() => {
+            slideDown();
+            props.onReTest();
+          }}
+        />
       </Animated.View>
     </>
   );
