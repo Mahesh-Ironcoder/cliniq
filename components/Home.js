@@ -1,6 +1,6 @@
 import AppButton from './AppButton';
 import CustomCamera from './CustomCamera';
-import Scanning from './Scanning';
+import Scanning from './Vitals';
 import {authContext} from '../contexts/AuthContext';
 
 import React from 'react';
@@ -17,6 +17,7 @@ import {useIsFocused} from '@react-navigation/core';
 
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import ProgressBar from './ProgressBar';
+import VitalsCardContainer from './VitalsCardContainer';
 
 //--------------------------Done with imports-----------------------------------------------------
 
@@ -66,10 +67,10 @@ const Home = (props) => {
   const handleScan = () => {
     console.log('Handling scan: ');
     setIsScanning(true);
-    camRef.current.resumePreview();
+    // camRef.current.resumePreview();
     setTimeout(() => {
       setIsScanning(false);
-    }, 5000);
+    }, 10000);
   };
 
   // const handleModalActions = (ma) => {
@@ -99,16 +100,7 @@ const Home = (props) => {
             onScan={handleScan}
             hideControls={isScanning}
           />
-          {isScanning ? (
-            <>
-              <ProgressBar
-                ref={progressRef}
-                width={200}
-                style={{position: 'absolute', top: 50}}
-              />
-              <Scanning />
-            </>
-          ) : null}
+          {isScanning ? <VitalsCardContainer /> : null}
           {/* <Icon
             name="expand-less"
             size={30}

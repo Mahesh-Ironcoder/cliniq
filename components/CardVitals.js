@@ -6,12 +6,11 @@ const CardVitals = (props) => {
   const [data, setData] = React.useState(props.v);
 
   React.useEffect(() => {
-    console.log('data: ', data);
+    // console.log('data: ', data);
     setData(props.v);
   }, [props]);
 
   if (data.value === null) {
-    console.log('card data null');
     return (
       <View style={[styles.card, props.customStyle]}>
         <ProgressBar

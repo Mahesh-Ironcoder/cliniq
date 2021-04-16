@@ -20,7 +20,7 @@ const AppButton = ({
         rounded === true && {borderRadius: 10, overflow: 'hidden'},
       ]}
       onPress={onPress}>
-      <Text style={[defaultTextStyle, textStyle]}>{title}</Text>
+      <Text style={[textStyle, defaultTextStyle]}>{title}</Text>
     </Pressable>
   );
 };
