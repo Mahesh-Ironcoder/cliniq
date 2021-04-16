@@ -1,24 +1,48 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
+import CardVitals from './CardVitals';
+
+const data = {
+  'Blood Pressure': [
+    {title: 'Diastolic', value: 120},
+    {title: 'Systolic', value: 80},
+  ],
+  Temperature1: '80F',
+  Temperature2: '80F',
+  SpO2: '90%',
+  Temperature3: '80F',
+};
+const idata = {
+  'Blood Pressure': null,
+  Temperature1: null,
+  Temperature2: null,
+  SpO2: null,
+  Temperature3: null,
+};
 
 const Scanning = () => {
+  const [vitals, setVitals] = React.useState(idata);
+
+  React.useEffect(() => {
+    setTimeout(() => {
+      setVitals(data);
+    }, 500);
+  }, [vitals]);
+
   return (
     <View style={styles.container}>
-      <View style={[styles.card, {flexGrow: 2, minHeight: 150}]}>
-        <Text>BP</Text>
-      </View>
-      <View style={[styles.card]}>
-        <Text>temp1</Text>
-      </View>
-      <View style={[styles.card]}>
-        <Text>SpO2</Text>
-      </View>
-      <View style={[styles.card]}>
-        <Text>Temp0</Text>
-      </View>
-      <View style={[styles.card]}>
-        <Text>Temp2</Text>
-      </View>
+      {Object.entries(vitals).map((v, i) => {
+        if (v[0] === 'Blood Pressure') {
+          return (
+            <CardVitals
+              key={i}
+              v={{title: v[0], value: v[1]}}
+              customStyle={{flexGrow: 2, minHeight: 150}}
+            />
+          );
+        }
+        return <CardVitals key={i} v={{title: v[0], value: v[1]}} />;
+      })}
     </View>
   );
 };
@@ -33,8 +57,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     width: 350,
     height: 282,
-    // borderColor: 'red',
-    // borderWidth: 1,
     position: 'absolute',
     bottom: '3%',
   },
