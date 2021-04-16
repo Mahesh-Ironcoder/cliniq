@@ -24,7 +24,6 @@ const Home = (props) => {
   const {biometricsSet, authDispatch} = React.useContext(authContext);
   const [isScanning, setIsScanning] = React.useState(false);
   // const [askModel, setAskModel] = React.useState(!biometricsSet.status);
-  // const [progress, setProgress] = React.useState(0);
 
   const camRef = React.useRef(null);
   const drawerRef = React.useRef(null);
@@ -133,13 +132,6 @@ const homescreenStyles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
   },
-  hmBtnGrp: {
-    width: '100%',
-    position: 'absolute',
-    bottom: 50,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
   drawerNavigationStyles: {
     width: 300,
     height: '100%',
@@ -148,7 +140,6 @@ const homescreenStyles = StyleSheet.create({
     padding: 16,
   },
   drawerNavigationItems: {
-    // margin: 16,
     width: 250,
     backgroundColor: '#303f9f',
   },

@@ -7,27 +7,9 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 
 //--------------------------Done with imports-----------------------------------------------------
 
-// function reducer(prevState, action) {
-//   switch (action.type) {
-//     case 'detect':
-//       let faces = action.payload;
-//       try {
-
-//       } catch (e) {
-//         console.log('handle Detections error;', e);
-//       }
-//       return state;
-//     case 'flip':
-//       return state;
-//     default:
-//       return state;
-//   }
-// }
-
 const CustomCamera = React.forwardRef((props, ref) => {
   const [detections, setDetections] = React.useState([]);
   const [type, setType] = React.useState(RNCamera.Constants.Type.front);
-  // const [state, dispatch] = useReducer(reducer, initialState, init);
 
   const screen = useWindowDimensions();
 
