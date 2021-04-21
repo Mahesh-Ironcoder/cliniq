@@ -38,6 +38,7 @@ const Login = (props) => {
   return (
     <View style={styles.loginWrapper}>
       <View style={styles.loginContainer}>
+        <Text style={styles.loginHeader}>CliniQ</Text>
         <TextInput
           placeholder="Username"
           value={userName}
@@ -56,6 +57,7 @@ const Login = (props) => {
           onPress={handleLogin}
           style={styles.loginBtn}
           textStyle={styles.loginText}
+          rounded
         />
         <View style={styles.extraOptionStyles}>
           <Pressable>
@@ -119,6 +121,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     fontSize: 16,
     color: PlatformColor(''),
+  },
+  loginHeader: {
+    fontSize: 34,
+    fontWeight: 'bold',
+    margin: 10,
   },
 });
 export default Login;

@@ -111,6 +111,10 @@ const AuthContextProvider = (props) => {
               });
           } else {
             // authDispatch({type: 'biometricsSet', payload: {...value.biometricsSet, askModal:true}})
+            authDispatch({
+              type: 'biometrics',
+              payload: {...value.biometricsSet},
+            });
             // setAskModal(true);
             console.log('biometrics are not set');
           }
@@ -119,7 +123,7 @@ const AuthContextProvider = (props) => {
       .catch((e) => {
         console.error('Error in auth effect: ', e);
       });
-  },[]);
+  }, []);
 
   return (
     <authContext.Provider value={{...authState, authDispatch}}>
