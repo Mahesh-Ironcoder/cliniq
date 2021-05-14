@@ -1,15 +1,28 @@
 import React from 'react';
 import {Pressable, Text, PlatformColor} from 'react-native';
+import {color} from 'react-native-reanimated';
 
-const AppButton = ({title, style, textStyle, rounded, defaultStyle}) => {
+//--------------------------Done with imports-----------------------------------------------------
+
+const AppButton = ({
+  title,
+  onPress,
+  style,
+  textStyle,
+  rounded,
+  defaultStyle,
+  defaultTextStyle,
+}) => {
   return (
     <Pressable
       style={[
         defaultStyle,
         style,
         rounded === true && {borderRadius: 10, overflow: 'hidden'},
-      ]}>
-      <Text style={textStyle}>{title}</Text>
+      ]}
+      android_ripple={{color: 'rgba(0, 0, 0, 0.16)', radius: 46}}
+      onPress={onPress}>
+      <Text style={[textStyle, defaultTextStyle]}>{title}</Text>
     </Pressable>
   );
 };
@@ -19,7 +32,7 @@ AppButton.defaultProps = {
     width: 100,
     backgroundColor: PlatformColor('?android:attr/colorPrimary'),
   },
-  textStyle: {
+  defaultTextStyle: {
     textAlign: 'center',
     padding: 8,
   },

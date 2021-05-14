@@ -1,75 +1,146 @@
 import 'react-native-gesture-handler';
-
 import React from 'react';
-import {View, Text, StyleSheet} from 'react-native';
-import {Camera} from 'expo-camera';
-import * as FaceDetector from 'expo-face-detector';
+import {Text, StyleSheet, View, useWindowDimensions} from 'react-native';
+import {FaceDetector, RNCamera} from 'react-native-camera';
+import AppButton from './AppButton';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
-const CustomCamera = () => {
-  const [hasPermissions, setHasPermissions] = React.useState(false);
-  const [boundsR, setBoundsR] = React.useState("");
+//--------------------------Done with imports-----------------------------------------------------
+
+const CustomCamera = React.forwardRef((props, ref) => {
+  const [detections, setDetections] = React.useState([]);
+  const [type, setType] = React.useState(RNCamera.Constants.Type.front);
+
+  const screen = useWindowDimensions();
 
   const handleDetections = ({faces}) => {
-    console.log('BoundsR: ', faces);
     try {
-      setBoundsR({...faces[0].bounds});
+      setDetections((prevState) => {
+        let currentFaces = [];
+
+        if (
+          prevState.length === currentFaces.length &&
+          prevState.every((v, i) => v === currentFaces[i])
+        ) {
+          currentFaces = faces;
+        }
+        return [...currentFaces];
+      });
     } catch (e) {
-      console.log('handle Detection error;', e);
+      console.log('handle Detections error;', e);
     }
+    // try {
+    //   if (faces.length === 0) {
+    //     setDetections([]);
+    //   }
+    //   setDetections([...faces]);
+    // } catch (e) {
+    //   console.log('handle Detections error;', e);
+    // }
   };
 
-  React.useEffect(() => {
-    (async () => {
-      const status = await Camera.getPermissionsAsync();
-      setHasPermissions(status.status === 'granted');
-
-      // console.log('status: ', status);
-      if (!status.granted) {
-        const isGranted = await Camera.requestPermissionsAsync();
-        setHasPermissions(isGranted.status === 'granted');
-      }
-    })();
-  }, []);
-  console.log('camera boundsR: ', boundsR);
-  if (!hasPermissions) {
-    return (
-      <View>
-        <Text>No camera permissions</Text>
-      </View>
+  const handleFlip = () => {
+    setType(
+      type === RNCamera.Constants.Type.front
+        ? RNCamera.Constants.Type.back
+        : RNCamera.Constants.Type.front,
     );
-  }
+  };
+
   return (
     <View style={cameraStyles.camContainer}>
-      <Camera
-        type={Camera.Constants.Type.front}
+      <RNCamera
+        ref={ref}
+        type={type}
         style={cameraStyles.cam}
-        onFacesDetected={(d) => {
-          console.log('S F D');
-          handleDetections(d);
-        }}
+        whiteBalance={RNCamera.Constants.WhiteBalance.auto}
+        onFacesDetected={handleDetections}
         faceDetectorSettings={{
           mode: FaceDetector.Constants.Mode.fast,
           detectLandmarks: FaceDetector.Constants.Landmarks.none,
           runClassifications: FaceDetector.Constants.Classifications.none,
-          minDetectionInterval: 100,
+          minDetectionInterval: 1000,
           tracking: true,
         }}
         onFacesDetectedError={(e) => {
           console.log('Error: ', e);
         }}
-        autoFocus={Camera.Constants.AutoFocus}
-      />
-      <View
-        style={{
-          borderWidth: 1,
-          borderColor: 'red',
-          position: 'absolute',
-          top: 3,
-          width: boundsR ? boundsR.size.width : 100,
-        }}></View>
+        androidCameraPermissionOptions={{
+          title: 'Permission to use camera',
+          message: 'We need your permission to use your camera',
+          buttonPositive: 'Ok',
+          buttonNegative: 'Cancel',
+        }}
+        androidRecordAudioPermissionOptions={{
+          title: 'Permission to use audio recording',
+          message: 'We need your permission to use your audio',
+          buttonPositive: 'Ok',
+          buttonNegative: 'Cancel',
+        }}
+        cameraViewDimensions={{width: screen.width, height: screen.height}}>
+        {/* ----------------------Children components--------------------------------------*/}
+        {({camera, status}) => {
+          if (status !== 'READY') {
+            return (
+              <View>
+                <Text>NO permissions for camera</Text>
+              </View>
+            );
+          }
+
+          if (props.hideControls) {
+            return null;
+          }
+
+          return (
+            <>
+              {detections.map((face, id) => {
+                return (
+                  <View
+                    key={id}
+                    style={{
+                      borderWidth: 2,
+                      borderColor: 'green',
+                      position: 'absolute',
+                      top: face.bounds.origin.y - 25,
+                      left: face.bounds.origin.x - 60,
+                      width: face.bounds.size.width + 50,
+                      height: face.bounds.size.height + 25,
+                    }}
+                  />
+                );
+              })}
+              <View style={cameraStyles.hmBtnGrp}>
+                <AppButton
+                  style={{
+                    flexBasis: 200,
+                    backgroundColor: '#F2AB1D',
+                  }}
+                  textStyle={{color: 'white', fontSize: 18}}
+                  title="Start Scan"
+                  rounded
+                  onPress={props.onScan || null}
+                />
+                <Icon.Button
+                  name="camera-rear"
+                  size={25}
+                  backgroundColor="#37BCDF"
+                  color="white"
+                  onPress={handleFlip}>
+                  Flip
+                </Icon.Button>
+                <Text style={cameraStyles.bottomText}>
+                  Click on start to begin the process
+                </Text>
+              </View>
+            </>
+          );
+        }}
+        {/* --------------------------------------children components end----------------- */}
+      </RNCamera>
     </View>
   );
-};
+});
 
 const cameraStyles = StyleSheet.create({
   camContainer: {
@@ -80,6 +151,23 @@ const cameraStyles = StyleSheet.create({
   cam: {
     width: '100%',
     height: '100%',
+  },
+  hmBtnGrp: {
+    width: '100%',
+    position: 'absolute',
+    height: '15%',
+    bottom: 30,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    alignContent: 'space-between',
+  },
+  bottomText: {
+    // flexBasis: '100%',
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '300',
   },
 });
 

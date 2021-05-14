@@ -1,68 +1,57 @@
 import React, {useReducer, createContext} from 'react';
-
+import {
+  Modal,
+  Text,
+  View,
+  Pressable,
+  StyleSheet,
+  BackHandler,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ReactNativeBiometrics from 'react-native-biometrics';
+import AskBiometrics from '../components/AskBiometrics';
+
+//--------------------------Done with imports-----------------------------------------------------
 
 export const authContext = createContext(null);
 
 const initialState = {
   status: false,
-  token: null,
-  username: '',
-  password: '',
-  expiration: 0,
-  splash: true,
-  authenicatedLocally: false,
-  biometricsSet: true,
-  local: 'false',
+  user: {
+    token: null,
+    username: '',
+    password: '',
+    expiration: 0,
+  },
+  authenticatedLocally: false,
+  biometrics: {status: false, type: 0},
+  /**
+   * biometric->type = 0 means use normal login
+   * biometric->type = 1 means use device biometrics
+   */
+  // biometricsSet: false,
+
+  loading: false,
+  local: false,
 };
 
-// function isUserAvailable() {
-//   console.log('Enter is user');
-//   return AsyncStorage.getItem('_user');
-// }
-
-// const InitializeAuth = (initalstate) => {
-//   console.log('Enter IA');
-//   let user = undefined;
-//   AsyncStorage.getItem('_user')
-//     .then((resp) => {
-//       user = JSON.parse(resp);
-//     })
-//     .catch((e) => {
-//       console.error(
-//         'AuthContext - InitAuth: Error in getting the user value...\n ',
-//         e,
-//       );
-//     });
-//   while (user === undefined) {
-//     let a = 1;
-//     console.log(a);
-//     a = a + 1;
-//   }
-//   console.log('Exiting IA');
-//   return user !== null ? {...initalstate, ...user} : {...initalstate};
-// };
-
 function reducer(state, action) {
-  // console.log('Reducer init: ', state);
   switch (action.type) {
     case 'login':
-      // if (state.token !== null && Date.now() > state.expiration) {
-      //   return {...state};
-      // }
-      // let username = action.payload.user;
-      // let password = action.payload.pass;
-      // let token = authWithServer(user, pass);
       let token = action.payload.token || 'dummy-user-token';
-      let user = {
+      let nextState = {
         ...state,
-        ...action.payload,
         status: true,
-        token,
+        user: {
+          username: action.payload.username,
+          password: action.payload.password,
+          expiration: Date.now() + 3600000,
+          token,
+        },
+        loading: false,
       };
       if (!action.payload.local) {
-        AsyncStorage.setItem('_user', JSON.stringify(user))
+        AsyncStorage.setItem('_user', JSON.stringify(nextState))
           .then((e) => {
             console.log('setItem', e);
           })
@@ -73,7 +62,7 @@ function reducer(state, action) {
             );
           });
       }
-      return {...user};
+      return {...nextState};
     case 'logout':
       AsyncStorage.removeItem('_user').catch((e) => {
         console.error(
@@ -82,10 +71,23 @@ function reducer(state, action) {
         );
       });
       return initialState;
-    case 'splash':
-      return {...state, splash: action.payload};
-    case 'setUser':
-      return {...state, ...action.payload};
+    case 'biometrics':
+      let ns = {
+        ...state,
+        biometrics: {
+          status: action.payload.status,
+          type: action.payload.type === 'biometric' ? 1 : 0,
+        },
+      };
+      AsyncStorage.setItem('_user', JSON.stringify(ns)).catch((e) => {
+        console.error(
+          '@AuthContext:reducer - Error storing the value in app storage\n',
+          e,
+        );
+      });
+      return ns;
+    case 'loading':
+      return {...state, loading: action.payload};
     default:
       return state;
   }
@@ -93,118 +95,86 @@ function reducer(state, action) {
 
 const AuthContextProvider = (props) => {
   const [authState, authDispatch] = useReducer(reducer, initialState);
+  const [askModal, setAskModal] = React.useState(false);
 
   React.useEffect(() => {
-    // console.log('IN effect before IA');
-    // console.log(
-    //   '\n\n---------------\n',
-    //   InitializeAuth(initialState, 'effect'),
-    //   '\n\n---------------',
-    // );
-    // console.log('IN effect after IA');
+    console.info('auth context rendered ', Date.now());
     AsyncStorage.getItem('_user')
       .then((value) => {
         if (value !== null) {
-          authDispatch({type: 'login', payload: {...value, local: true}});
+          console.log('value: ', value);
+          let parsedValue = JSON.parse(value);
+          console.log('parsed value: ', parsedValue);
+
+          if (parsedValue && parsedValue.biometrics.status) {
+            console.log('pared value: ', parsedValue.biometrics.type);
+            parsedValue.biometrics.type &&
+              ReactNativeBiometrics.simplePrompt({
+                promptMessage: 'Authenticate',
+              })
+                .then((st) => {
+                  if (st.success) {
+                    authDispatch({
+                      type: 'login',
+                      payload: {...value, local: true},
+                    });
+                  } else {
+                    console.log('Not verified');
+                    BackHandler.exitApp();
+                  }
+                })
+                .catch((e) => {
+                  console.error('@AuthContext - biometrics: Error ', e);
+                  BackHandler.exitApp();
+                });
+          } else {
+            console.info('no biometrics: ');
+            setAskModal(true);
+          }
         }
       })
       .catch((e) => {
         console.error('Error in auth effect: ', e);
       });
-    // console.info('authcontext state: ', authState);
   }, []);
 
   return (
     <authContext.Provider value={{...authState, authDispatch}}>
       {props.children}
+      <Modal
+        animationType="slide"
+        visible={askModal}
+        onRequestClose={() => {
+          console.info('Home modal asked and closed');
+          setAskModal(false);
+        }}>
+        <AskBiometrics
+          onClose={(status, value) => {
+            authDispatch({type: 'biometrics', payload: {status, type: value}});
+            setAskModal(false);
+          }}
+        />
+      </Modal>
     </authContext.Provider>
   );
 };
 
+const styles = StyleSheet.create({
+  container: {
+    height: '40%',
+    width: '75%',
+    position: 'absolute',
+    top: '25%',
+    left: '12%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modal: {
+    backgroundColor: '#00f',
+    height: '25%',
+    width: '75%',
+  },
+});
+
 export default AuthContextProvider;
-
-// const isUserLoggedIn = () => {
-//   const authUser = isUserAvailable();
-//   if (authUser !== null) {
-//     if (authUser.biometricsSet) {
-//       const resp = authenticateWithBiometrics();
-//       if (resp.success) {
-//         login({username: auth});
-//       }
-//     }
-//   }
-// };
-
-// const login = (creds) => {
-//   /** Verify the creds with server and get a token
-//    * token = fetchTokenFromServer()
-//    * store the token in the secure storage for accessing and create a session
-//    */
-
-//   const authUser = isUser;
-//   Available();
-//   if (authUser !== null) {
-//     if (authUser.biometricsSet) {
-//       const resp = authenticateWithBiometrics();
-//       if (resp.success) {
-//         login({username: auth});
-//       }
-//     }
-//   }
-
-//   let token;
-//   if (creds.hasOwnProperty('userToken')) {
-//     token = creds.userToken;
-//   } else {
-//     token = 'dummy-user-token';
-//   }
-//   if (token !== null) {
-//     AsyncStorage.setItem(
-//       'user',
-//       JSON.stringify({userToken: token, userId: 'user-Id'}),
-//     )
-//       .then((stStatus) => {
-//         console.log(stStatus);
-//       })
-//       .catch((e) => {
-//         console.log('Error in setting the value: ', e);
-//       });
-//     setAuthentication({
-//       ...authentication,
-//       status: true,
-//       username: creds.user,
-//       password: creds.pass,
-//       token,
-//     });
-//   } else {
-//     setAuthentication(initialState);
-//   }
-// };
-
-// const logout = () => {
-//   /** Logout the current user and clear all the sessions related to that user */
-//   AsyncStorage.removeItem('user')
-//     .then((stStatus) => {
-//       console.log(stStatus);
-//     })
-//     .catch((e) => {
-//       console.log('Error in removing the value: ', e);
-//     });
-//   setAuthentication(initialState);
-// };
-
-// React.useEffect(() => {
-//   console.log('effect from auth context:');
-//   AsyncStorage.getItem('user').then((resp) => {
-//     if (null) {
-//       setSplash({user: undefined, screen: false});
-//     }
-//     console.log('user Initial:', resp);
-//     setSplash({screen: false, user: resp});
-//     login(resp);
-//   });
-//   // .catch((e) => {
-//   //   setSplash({user: undefined, screen: false});
-//   //   console.log('Inital fetch failed: ', e);
-//   // });
-// }, []);

@@ -134,6 +134,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+
+        //for RN camera package
+        missingDimensionStrategy 'react-native-camera', 'general' // <--- inserted this line
     }
     splits {
         abi {
@@ -179,10 +182,6 @@ android {
         }
     }
 
-    // react native mmkv requires
-    packagingOptions {
-        pickFirst '**/*.so'
-    }
 }
 
 dependencies {
@@ -214,6 +213,14 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    // Import the Firebase BoM
+    implementation platform('com.google.firebase:firebase-bom:26.8.0')
+
+    // Add the dependency for the Firebase SDK for Google Analytics
+    // When using the BoM, don't specify versions in Firebase dependencies
+    implementation 'com.google.firebase:firebase-analytics'
+
 }
 
 // Run this once to be able to run the application with BUCK
@@ -224,3 +231,9 @@ task copyDownloadableDepsToLibs(type: Copy) {
 }
 
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)
+
+//adding firebase
+apply plugin: 'com.google.gms.google-services'
+
+//RNVI
+apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"

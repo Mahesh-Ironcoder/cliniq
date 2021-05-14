@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "897621211823",
+    "project_id": "cliniq-75592",
+    "storage_bucket": "cliniq-75592.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:897621211823:android:964c64c1b82eb09bef325a",
+        "android_client_info": {
+          "package_name": "com.cliniq"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "897621211823-30fjimq6tn63etg1iflmu1f4ukmgkq7a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBZI0t9pxbSOugg1AY2-d9ZGkWMTQ4X1ac"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "897621211823-30fjimq6tn63etg1iflmu1f4ukmgkq7a.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:897621211823:android:36efa870ee383a35ef325a",
+        "android_client_info": {
+          "package_name": "com.cliniqui"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "897621211823-30fjimq6tn63etg1iflmu1f4ukmgkq7a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBZI0t9pxbSOugg1AY2-d9ZGkWMTQ4X1ac"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "897621211823-30fjimq6tn63etg1iflmu1f4ukmgkq7a.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
