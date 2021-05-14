@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ReactNativeBiometrics from 'react-native-biometrics';
+import AskBiometrics from '../components/AskBiometrics';
 
 //--------------------------Done with imports-----------------------------------------------------
 
@@ -22,9 +23,14 @@ const initialState = {
     password: '',
     expiration: 0,
   },
-  authenicatedLocally: false,
-  // biometricsSet: {status: false, askAgain: 0, askModal: true},
-  biometricsSet: false,
+  authenticatedLocally: false,
+  biometrics: {status: false, type: 0},
+  /**
+   * biometric->type = 0 means use normal login
+   * biometric->type = 1 means use device biometrics
+   */
+  // biometricsSet: false,
+
   loading: false,
   local: false,
 };
@@ -66,16 +72,20 @@ function reducer(state, action) {
       });
       return initialState;
     case 'biometrics':
-      AsyncStorage.setItem(
-        '_user',
-        JSON.stringify({...state, biometricsSet: action.payload}),
-      ).catch((e) => {
+      let ns = {
+        ...state,
+        biometrics: {
+          status: action.payload.status,
+          type: action.payload.type === 'biometric' ? 1 : 0,
+        },
+      };
+      AsyncStorage.setItem('_user', JSON.stringify(ns)).catch((e) => {
         console.error(
           '@AuthContext:reducer - Error storing the value in app storage\n',
           e,
         );
       });
-      return {...state, biometricsSet: action.payload};
+      return ns;
     case 'loading':
       return {...state, loading: action.payload};
     default:
@@ -85,38 +95,41 @@ function reducer(state, action) {
 
 const AuthContextProvider = (props) => {
   const [authState, authDispatch] = useReducer(reducer, initialState);
-  const [askModal, setAskModal] = React.useState(authState.biometricsSet);
+  const [askModal, setAskModal] = React.useState(false);
+
   React.useEffect(() => {
+    console.info('auth context rendered ', Date.now());
     AsyncStorage.getItem('_user')
       .then((value) => {
         if (value !== null) {
+          console.log('value: ', value);
           let parsedValue = JSON.parse(value);
-          if (parsedValue.biometricsSet) {
-            ReactNativeBiometrics.simplePrompt({promptMessage: 'Authenticate'})
-              .then((st) => {
-                if (st.success) {
-                  authDispatch({
-                    type: 'login',
-                    payload: {...value, local: true},
-                  });
-                } else {
-                  console.log('Not verified');
-                  BackHandler.exitApp();
-                  // authDispatch({type: 'logout'})
-                }
+          console.log('parsed value: ', parsedValue);
+
+          if (parsedValue && parsedValue.biometrics.status) {
+            console.log('pared value: ', parsedValue.biometrics.type);
+            parsedValue.biometrics.type &&
+              ReactNativeBiometrics.simplePrompt({
+                promptMessage: 'Authenticate',
               })
-              .catch((e) => {
-                console.error('@AuthContext - biometrics: Error ', e);
-                BackHandler.exitApp();
-              });
+                .then((st) => {
+                  if (st.success) {
+                    authDispatch({
+                      type: 'login',
+                      payload: {...value, local: true},
+                    });
+                  } else {
+                    console.log('Not verified');
+                    BackHandler.exitApp();
+                  }
+                })
+                .catch((e) => {
+                  console.error('@AuthContext - biometrics: Error ', e);
+                  BackHandler.exitApp();
+                });
           } else {
-            // authDispatch({type: 'biometricsSet', payload: {...value.biometricsSet, askModal:true}})
-            authDispatch({
-              type: 'biometrics',
-              payload: {...value.biometricsSet},
-            });
-            // setAskModal(true);
-            console.log('biometrics are not set');
+            console.info('no biometrics: ');
+            setAskModal(true);
           }
         }
       })
@@ -128,38 +141,20 @@ const AuthContextProvider = (props) => {
   return (
     <authContext.Provider value={{...authState, authDispatch}}>
       {props.children}
-      {/* <Modal
+      <Modal
         animationType="slide"
         visible={askModal}
         onRequestClose={() => {
           console.info('Home modal asked and closed');
           setAskModal(false);
         }}>
-        <View style={styles.container}>
-          <Text>Fast-Authentication</Text>
-          <Text>
-            Set password free authentication with your device fingerprint or
-            faceeId
-          </Text>
-          <View>
-            <Pressable
-              style={{width: '40%', padding: 16, borderWidth: 2}}
-              onPress={() => {
-                authDispatch({type: 'biometrics', payload: true});
-                setAskModal(false);
-              }}>
-              <Text>ok</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => {
-                authDispatch({type: 'biometrics', payload: false});
-                setAskModal(false);
-              }}>
-              <Text>Not now</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal> */}
+        <AskBiometrics
+          onClose={(status, value) => {
+            authDispatch({type: 'biometrics', payload: {status, type: value}});
+            setAskModal(false);
+          }}
+        />
+      </Modal>
     </authContext.Provider>
   );
 };

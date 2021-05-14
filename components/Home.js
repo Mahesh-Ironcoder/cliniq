@@ -16,6 +16,7 @@ import {
 import {useIsFocused} from '@react-navigation/core';
 
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import {RNCamera} from 'react-native-camera';
 import ProgressBar from './ProgressBar';
 import VitalsCardContainer from './VitalsCardContainer';
 
@@ -77,6 +78,37 @@ const Home = (props) => {
     // }, 10000);
   };
 
+  // const handleTakePic = async () => {
+  //   try {
+  //     return await camRef.current.takePictureAsync({
+  //       base64: true,
+  //       qualit: 0.5,
+  //       doNotSave: true,
+  //     });
+  //   } catch (e) {
+  //     console.error('Erro in taking pickture; ', e);
+  //     return null;
+  //   }
+  // };
+  const handleRecording = async () => {
+    try {
+      // let id = setTimeout(() => {
+      //   camRef.current.stopRecording();
+      //   clearTimeout(id);
+      // }, 10000);
+      // RNCamera.Constants.Orientation.portrait;
+      recordData = await camRef.current.recordAsync({
+        quality: RNCamera.Constants.VideoQuality['480p'],
+        orientation: RNCamera.Constants.Orientation.landscapeRight,
+        maxDuration: 10,
+      });
+
+      return recordData;
+    } catch (e) {
+      console.log('Error in recording: ', e);
+    }
+  };
+
   // const handleModalActions = (ma) => {
   //   console.log('handleModalActions');
 
@@ -104,7 +136,12 @@ const Home = (props) => {
             onScan={handleScan}
             hideControls={isScanning}
           />
-          {isScanning ? <VitalsCardContainer onReTest={handleReTest} /> : null}
+          {isScanning ? (
+            <VitalsCardContainer
+              onReTest={handleReTest}
+              pictureData={handleRecording}
+            />
+          ) : null}
           {/* <Icon
             name="expand-less"
             size={30}

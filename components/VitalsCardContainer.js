@@ -45,20 +45,31 @@ const reducer = (prevState, action) => {
 const VitalsCardContainer = (props) => {
   const [loading, setLoading] = React.useState(true);
   const [vitals, setVitals] = React.useState(idata);
-  // const [state, dispatch] = React.useReducer(reducer, {
-  //   loading: true,
-  //   vitals: idata,
-  // });
 
   React.useEffect(() => {
-    setTimeout(() => {
-      // dispatch({type: 'set', payload: data});
-      setLoading(false);
-      setVitals(data);
-    }, 3000);
-    // return () => {
-    //   dispatch({type: 'reset'});
-    // };
+    // setTimeout(() => {
+    //   setLoading(false);
+    //   setVitals(data);
+    // }, 3000);
+    let formData = new FormData();
+    (async () => {
+      try {
+        let recdata = await props.pictureData();
+        formData.append('video', {
+          uri: recdata.uri,
+          type: 'video/mp4',
+          name: 'video.mp4',
+        });
+        resp = await fetch('http://0.0.0.0:5000/convertToFrames', {
+          method: 'POST',
+          body: formData,
+        });
+        let data = await resp.json();
+        console.log('Response time: ', data.timetaken);
+      } catch (e) {
+        console.log('Error in vitals data: ', e);
+      }
+    })();
   }, [vitals]);
 
   const screen = useWindowDimensions();
@@ -159,3 +170,58 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
 });
+
+// const [state, dispatch] = React.useReducer(reducer, {
+//   loading: true,
+//   vitals: idata,
+// });
+
+// const sendFrameRequest = async (imageData) => {
+//   // console.log('Sending request', imageData);
+//   const data = {
+//     id: 4,
+//     name: 'something',
+//     pms: 'uk',
+//     status: 1,
+//     photo: imageData,
+//   };
+//   try {
+//     let resp = await fetch('http://15.207.11.162:8500/data/uploadPhoto', {
+//       method: 'POST',
+//       mode: 'cors',
+//       headers: {'Content-type': 'application/json'},
+//       body: JSON.stringify(data),
+//     });
+//     // resp.
+//     if (resp.ok) {
+//       return resp.json();
+//     }
+//     return resp;
+//   } catch (e) {
+//     console.log('Error in requesting: ', e);
+//     return 'failed';
+//   }
+// };
+
+// async function newFunction() {
+//   let imgData = await props.pictureData();
+//   let base64Str = imgData.base64;
+//   console.log('Base64 string: ', base64Str.slice(0, 50));
+//   let result = await sendFrameRequest(base64Str);
+//   console.log('Image: ', imgData.width);
+//   console.log('Result: ', result);
+//   return result;
+
+//   //////
+//   let picPromises = [];
+//   for (let i = 0; i < 10; i++) {
+//     picPromises.push(props.pictureData());
+//   }
+//   let imgData = await Promise.all(picPromises);
+//   // console.log('Image data for 10', imgData);
+//   return Promise.all(
+//     imgData.map(({base64}) => {
+//       sendFrameRequest(base64);
+//     }),
+//   );
+// }
