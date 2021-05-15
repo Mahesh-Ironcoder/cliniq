@@ -14,6 +14,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Arrays;
 
+// OpenCV imports
+import com.reactlibrary.RNOpenCvLibraryPackage;
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
+import android.util.Log;
+
 public class MainApplication extends Application implements ReactApplication {
 
   private final ReactNativeHost mReactNativeHost =
@@ -29,6 +36,7 @@ public class MainApplication extends Application implements ReactApplication {
           List<ReactPackage> packages = new PackageList(this).getPackages();
           // Packages that cannot be autolinked yet can be added manually here, for example:
           // packages.add(new MyReactNativePackage());
+          packages.add(new RNOpenCvLibraryPackage());
           return packages;
         }
 
@@ -48,6 +56,9 @@ public class MainApplication extends Application implements ReactApplication {
     super.onCreate();
     SoLoader.init(this, /* native exopackage */ false);
     initializeFlipper(this, getReactNativeHost().getReactInstanceManager());
+    if (!OpenCVLoader.initDebug()) { // ADDED THIS
+      Log.d("OpenCv", "Error while init"); // AND THIS
+    } // DON'T FORGET THE "}"
   }
 
   /**

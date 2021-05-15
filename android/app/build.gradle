@@ -120,22 +120,30 @@ def jscFlavor = 'org.webkit:android-jsc:+'
 def enableHermes = project.ext.react.get("enableHermes", false);
 
 android {
-    compileSdkVersion rootProject.ext.compileSdkVersion
+    compileSdkVersion 29
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
+    packagingOptions {
+       pickFirst 'lib/x86/libc++_shared.so'
+       pickFirst 'lib/x86_64/libc++_shared.so'
+       pickFirst 'lib/armeabi-v7a/libc++_shared.so'
+       pickFirst 'lib/arm64-v8a/libc++_shared.so'
+   }
+
     defaultConfig {
         applicationId "com.cliniqui"
         minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
+        targetSdkVersion targetSdkVersion
         versionCode 1
         versionName "1.0"
 
         //for RN camera package
-        missingDimensionStrategy 'react-native-camera', 'general' // <--- inserted this line
+        missingDimensionStrategy 'react-native-camera', 'general'
+        multiDexEnabled true// <--- inserted this line
     }
     splits {
         abi {
@@ -189,6 +197,7 @@ dependencies {
     implementation "com.facebook.react:react-native:+"  // From node_modules
 
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+    implementation project(path: ':opencv')
 
     debugImplementation("com.facebook.flipper:flipper:0.87.0") {
       exclude group:'com.facebook.fbjni'

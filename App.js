@@ -7,6 +7,7 @@ import AppNavigator from './components/AppNavigator';
 import React from 'react';
 import {StyleSheet, StatusBar} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
+import CameraScreen from './components/OpenCVCamera';
 
 //--------------------------Done with imports-----------------------------------------------------
 
@@ -17,13 +18,14 @@ function App() {
     StatusBar.setBarStyle('dark-content');
   });
   return (
-    <NavigationContainer>
-      <ThemeContextProvider>
-        <AuthContextProvider>
-          <AppNavigator />
-        </AuthContextProvider>
-      </ThemeContextProvider>
-    </NavigationContainer>
+    // <NavigationContainer>
+    //   <ThemeContextProvider>
+    //     <AuthContextProvider>
+    //       <AppNavigator />
+    //     </AuthContextProvider>
+    //   </ThemeContextProvider>
+    // </NavigationContainer>
+    <CameraScreen />
   );
 }
 
