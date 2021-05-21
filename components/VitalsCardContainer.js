@@ -6,12 +6,15 @@ import {
   View,
   Animated,
   Pressable,
+  Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import FullVitals from './FullVitals';
 
 import ProgressBar from './ProgressBar';
 import Vitals from './Vitals';
+
+import * as RNFS from 'react-native-fs';
 
 import JavaCV from '../src/nativeModules/JavaCV';
 
@@ -47,7 +50,8 @@ const reducer = (prevState, action) => {
 const VitalsCardContainer = (props) => {
   const [loading, setLoading] = React.useState(true);
   const [vitals, setVitals] = React.useState(idata);
-  const [converted, setConverted] = useState(false);
+  const [converted, setConverted] = React.useState(false);
+  const [imgUri, setImgUri] = React.useState("");
 
   /* React.useEffect(() => {
     // setTimeout(() => {
@@ -75,21 +79,33 @@ const VitalsCardContainer = (props) => {
     })();
   }, [vitals]); */
 
-
-  React.useEffect(()=>{
-    const showFiles = ()=>{
-
+  const showFiles = async ()=>{
+      console.log("Showfiles start", RNFS.DocumentDirectoryPath);
+      try{
+        
+        let frame = await RNFS.readFile(`${RNFS.DocumentDirectoryPath}/frame000.jpeg`,"base64");
+        console.log("Frames is: ", frame)
+        setImgUri(frame);
+      }catch(e){
+        console.log("Error in showing files",e);
+      }
     };
+  React.useEffect(()=>{
+  
     const onConvert = (msg)=>{
-      console.log(msg);
       showFiles();
+      console.log(msg);
     }
     const onError = (msg)=>{
       console.log(msg);
     }
     (async ()=>{
-      let vid = await props.prctureData();
-      JavaCV.getFramesFromVideo(vid.uri, onConvert, onError);
+      try{
+      let vid = await props.pictureData();
+      JavaCV.getFramesFromVideo(vid.uri,onError,onConvert);
+      }catch(e){
+        console.log("Error in showing files",e);
+      }
     })();
   },[converted])
 
@@ -113,6 +129,7 @@ const VitalsCardContainer = (props) => {
 
   return (
     <>
+      {imgUri ? <Image width={100} height={100} source={{uri: "data:image/jpeg;base64,"+imgUri, }} style={styles.frame} />:null}
       <View style={styles.container}>
         {loading && (
           <ProgressBar
@@ -190,6 +207,11 @@ const styles = StyleSheet.create({
     height: 25,
     alignSelf: 'center',
   },
+  frame:{
+    position: "absolute",
+    top: 20,
+    left: 5,
+  }
 });
 
 // const [state, dispatch] = React.useReducer(reducer, {

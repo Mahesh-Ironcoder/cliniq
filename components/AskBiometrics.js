@@ -1,6 +1,6 @@
 import React from 'react';
 import {Button, Pressable, StyleSheet, Text, View} from 'react-native';
-import {RadioButton} from 'react-native-paper';
+// import {RadioButton} from 'react-native-paper';
 
 const AskBiometrics = (props) => {
   const [checked, setChecked] = React.useState('');
@@ -11,7 +11,7 @@ const AskBiometrics = (props) => {
     <View style={styles.modalStyle}>
       <View>
         <Text style={styles.modalHeader}>Authentication type</Text>
-        <RadioButton.Group
+        {/* <RadioButton.Group
           onValueChange={(newValue) => setChecked(newValue)}
           value={checked}>
           <RadioButton.Item
@@ -19,7 +19,8 @@ const AskBiometrics = (props) => {
             value="biometric"
           />
           <RadioButton.Item label="Use normal login" value="normal" />
-        </RadioButton.Group>
+        </RadioButton.Group> */}
+        <Text>Radio Buttons here</Text>
       </View>
       <View style={styles.modalActions}>
         <Button title="Skip" onPress={() => handleAction(false, 'normal')} />
