@@ -7,7 +7,7 @@ import AppNavigator from './components/AppNavigator';
 import React from 'react';
 import {StyleSheet, StatusBar} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
-
+import TestJavaCV from './components/TestJavaCV';
 //--------------------------Done with imports-----------------------------------------------------
 
 function App() {
@@ -25,6 +25,7 @@ function App() {
       </ThemeContextProvider>
     </NavigationContainer>
   );
+  // return <TestJavaCV />;
 }
 
 const appStyles = StyleSheet.create({

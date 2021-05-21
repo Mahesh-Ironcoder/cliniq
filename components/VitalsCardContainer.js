@@ -13,6 +13,8 @@ import FullVitals from './FullVitals';
 import ProgressBar from './ProgressBar';
 import Vitals from './Vitals';
 
+import JavaCV from '../src/nativeModules/JavaCV';
+
 const data = {
   'Blood Pressure': [
     {title: 'Diastolic', value: 120},
@@ -45,8 +47,9 @@ const reducer = (prevState, action) => {
 const VitalsCardContainer = (props) => {
   const [loading, setLoading] = React.useState(true);
   const [vitals, setVitals] = React.useState(idata);
+  const [converted, setConverted] = useState(false);
 
-  React.useEffect(() => {
+  /* React.useEffect(() => {
     // setTimeout(() => {
     //   setLoading(false);
     //   setVitals(data);
@@ -70,7 +73,25 @@ const VitalsCardContainer = (props) => {
         console.log('Error in vitals data: ', e);
       }
     })();
-  }, [vitals]);
+  }, [vitals]); */
+
+
+  React.useEffect(()=>{
+    const showFiles = ()=>{
+
+    };
+    const onConvert = (msg)=>{
+      console.log(msg);
+      showFiles();
+    }
+    const onError = (msg)=>{
+      console.log(msg);
+    }
+    (async ()=>{
+      let vid = await props.prctureData();
+      JavaCV.getFramesFromVideo(vid.uri, onConvert, onError);
+    })();
+  },[converted])
 
   const screen = useWindowDimensions();
   const drawerAnim = React.useState(new Animated.Value(0))[0];

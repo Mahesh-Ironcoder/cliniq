@@ -92,11 +92,6 @@ const Home = (props) => {
   // };
   const handleRecording = async () => {
     try {
-      // let id = setTimeout(() => {
-      //   camRef.current.stopRecording();
-      //   clearTimeout(id);
-      // }, 10000);
-      // RNCamera.Constants.Orientation.portrait;
       recordData = await camRef.current.recordAsync({
         quality: RNCamera.Constants.VideoQuality['480p'],
         orientation: RNCamera.Constants.Orientation.landscapeRight,

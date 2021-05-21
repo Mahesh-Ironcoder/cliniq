@@ -3,6 +3,8 @@ package com.cliniqui;
 
 import android.app.Application;
 import android.content.Context;
+
+import com.RNJavaCVLib.RNJavaCVPackage;
 import com.facebook.react.PackageList;
 import com.facebook.react.ReactApplication;
 import org.reactnative.camera.RNCameraPackage;
@@ -13,6 +15,7 @@ import com.facebook.soloader.SoLoader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Arrays;
+
 
 
 public class MainApplication extends Application implements ReactApplication {
@@ -28,8 +31,9 @@ public class MainApplication extends Application implements ReactApplication {
         protected List<ReactPackage> getPackages() {
           @SuppressWarnings("UnnecessaryLocalVariable")
           List<ReactPackage> packages = new PackageList(this).getPackages();
-          // Packages that cannot be autolinked yet can be added manually here, for example:
+          // Packages that cannot be auto-linked yet can be added manually here, for example:
           // packages.add(new MyReactNativePackage());
+            packages.add(new RNJavaCVPackage());
           return packages;
         }
 
