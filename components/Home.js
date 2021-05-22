@@ -94,8 +94,9 @@ const Home = (props) => {
     try {
       recordData = await camRef.current.recordAsync({
         quality: RNCamera.Constants.VideoQuality['480p'],
-        orientation: RNCamera.Constants.Orientation.landscapeRight,
-        maxDuration: 10,
+        maxDuration: 15,
+        orientation: RNCamera.Constants.Orientation.portrait,
+        fixOrientation: true,
       });
 
       return recordData;
