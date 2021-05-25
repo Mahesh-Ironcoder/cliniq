@@ -14,6 +14,11 @@ import org.bytedeco.javacv.AndroidFrameConverter;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
+import org.bytedeco.javacv.OpenCVFrameConverter;
+import org.bytedeco.opencv.opencv_core.Mat;
+import org.bytedeco.opencv.opencv_core.Point2f;
+
+import static org.bytedeco.opencv.global.opencv_imgproc.*;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -35,58 +40,53 @@ public class RNJavaCVModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void getFramesFromVideo(String fileName, Callback errorCallback, Callback successCallback) {
-        String LOGTAG = "RNJavaCV";
-//        ShowFiles(LOGTAG);
+        String LOG_TAG = "RNJavaCV";
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(fileName);
         try {
             Frame frame;
             String ofn;
 
-            grabber.start();
 
-//            File framesDir = createAndGetDir("frames");
-            frame = grabber.grabImage();
+            grabber.start();
             int i = 1;
-          /*  for(int i = 0; i<350;i++) {
-                frame = grabber.grabImage();
-                if (frame == null) {
-                    break;
-                }
+
+            while((frame=grabber.grabImage()) != null){
                 ofn = String.format("frame%03d.jpeg", i);
-                createFiles(frame, ofn);
-            }*/
-            while(frame != null){
-                ofn = String.format("frame%03d.jpeg", i);
+                frame = rotateFrame(frame, 90);
                 createFiles(frame, ofn);
                 i++;
-                frame = grabber.grabImage();
             }
 
-            ShowFiles(LOGTAG);
+            ShowFiles(LOG_TAG);
             StopConverting(grabber);
             successCallback.invoke("Completed extracting ");
         } catch (FrameGrabber.Exception e) {
             String errMsg = "Error in frame grabs: " + e.getMessage();
-            Log.d(LOGTAG, errMsg);
+            Log.d(LOG_TAG, errMsg);
             errorCallback.invoke(errMsg);
         } catch (IOException e) {
             String errMsg = "Error in file creations: " + e.getMessage();
-            Log.d(LOGTAG, errMsg);
+            Log.d(LOG_TAG, errMsg);
             errorCallback.invoke(errMsg);
         } catch (Exception e) {
-            Log.d(LOGTAG, "Error in extracting: " + e.getMessage());
+            Log.d(LOG_TAG, "Error in extracting: " + e.getMessage());
             errorCallback.invoke("Error in extracting: " + e.getMessage());
         }
-//        finally {
-//            reactContext.deleteFile(fileName);
-//        }
     }
 
-    private File createAndGetDir(String directoryName){
+    private Frame rotateFrame(Frame frame, double angle){
+        OpenCVFrameConverter.ToMat convertToMat = new OpenCVFrameConverter.ToMat();
+        Mat matImage = convertToMat.convert(frame);
+        Point2f centerPoint = new Point2f(matImage.cols()/2.0f, matImage.rows()/2.0f);
+        Mat rot_mat = getRotationMatrix2D(centerPoint,angle,1);
+        warpAffine(matImage, matImage, rot_mat,matImage.size());
+        return convertToMat.convert(matImage);
+    }
+
+    private File createAndGetDir(String directoryName) throws IOException {
         File directory = new File(reactContext.getFilesDir(), directoryName);
-//        if(!directory.exists()){
-        directory.mkdir();
-//        }
+        boolean success = directory.mkdir();
+//        if(!success) throw new IOException("Not able to create frames directory");
         return  directory;
     }
 
@@ -102,10 +102,15 @@ public class RNJavaCVModule extends ReactContextBaseJavaModule {
         fos.close();
     }
 
-    private void ShowFiles(String LOGTAG) {
+    private void ShowFiles(String tag) throws Exception {
         File fd = new File(reactContext.getFilesDir(), "frames");
-        for(File f: fd.listFiles()){
-            Log.d(LOGTAG, "Files in filesDir: "+f.getName());
+        File[] filesList = fd.listFiles();
+        assert filesList != null;
+        if (filesList.length <= 0) {
+                throw new Exception("No files in the Dir frames. ");
+        }
+        for(File f: filesList){
+            Log.d(tag, "Files in filesDir: "+f.getName());
         }
     }
 

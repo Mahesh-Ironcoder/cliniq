@@ -162,6 +162,7 @@ const VitalsCardContainer = (props) => {
     try {
       let response = await fetch(
         'http://15.207.11.162:8500/data/uploadPhoto',
+        // 'http://0.0.0.0:5000/uploadTest',
         requestOptions,
       );
       if (response.ok) {
@@ -211,6 +212,41 @@ const VitalsCardContainer = (props) => {
       }
     })();
   }, [converted]);
+
+  // React.useEffect(() => {
+  //   let myHeaders = new Headers();
+  //   myHeaders.append('Content-Type', 'application/json');
+
+  //   let formData = JSON.stringify({
+  //     id: '5',
+  //     name: 'SomeName',
+  //   });
+
+  //   let requestOptions = {
+  //     method: 'POST',
+  //     headers: myHeaders,
+  //     body: formData,
+  //     redirect: 'follow',
+  //   };
+  //   (async () => {
+  //     try {
+  //       let response = await fetch(
+  //         'http://127.0.0.1:5000/uploadTest',
+  //         requestOptions,
+  //       );
+  //       if (response.ok) {
+  //         let body = await response.json();
+  //         // updateVitals(body);
+  //         console.log('Result is: ', body[8].value);
+  //         if (body[8].value) {
+  //           updateVitals(body);
+  //         }
+  //       }
+  //     } catch (e) {
+  //       console.error('Error sending request to localhost ', e);
+  //     }
+  //   })();
+  // }, [vitals]);
 
   return (
     <>
