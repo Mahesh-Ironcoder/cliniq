@@ -69,12 +69,9 @@ public class RNJavaCVModule extends ReactContextBaseJavaModule {
                 // Thread.sleep(5000);
             }
 
-            ofn = String.format("frame%03d.png", i);
-            framesDirectory = createImageFile(frame, ofn);
             WritableMap completeParams = Arguments.createMap();
-            completeParams.putString("uriPath", framesDirectory + "/" + ofn);
-            completeParams.putString("msg", "Completed extracting...");
-            // sendExtEvent(reactContext, "frameEvent", eventParams);
+            completeParams.putBoolean("lastReq", true);
+            sendExtEvent(reactContext, "frameEvent", completeParams);
 
             ShowFiles(LOG_TAG);
             StopConverting(grabber);

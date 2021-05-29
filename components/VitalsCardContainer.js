@@ -81,7 +81,7 @@ const VitalsCardContainer = (props) => {
       {title: 'Systolic', value: respText[3].value},
       {title: 'Diastolic', value: respText[4].value},
     ];
-    data['Saturation'] = respText[0].value + respText[0].prefix;
+    data['Saturation'] = respText[0].value + '%';
     data['Heart Rate'] = respText[1].value + respText[1].prefix;
     data['Respiration'] = respText[2].value + respText[2].prefix;
     data['Temperature'] = respText[5].value + respText[5].prefix;
@@ -95,45 +95,83 @@ const VitalsCardContainer = (props) => {
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
 
-    RNFS.readFile(filepath, 'base64')
-      .then((photoFrame) => {
-        const rawData = JSON.stringify({
-          id: 4,
-          name: 'something',
-          pms: 'uk',
-          status,
-          photo: photoFrame,
-        });
-
-        const requestOptions = {
-          method: 'POST',
-          headers: headers,
-          body: rawData,
-        };
-        return fetch(
-          'http://15.207.11.162:8500/data/uploadPhoto',
-          requestOptions,
-        );
-      })
-      .then((resp) => {
-        console.log('Fetch response is recieved...');
-        if (resp.ok) {
-          return resp.json();
-        }
-      })
-      .then((body) => {
-        console.log(
-          `The response with result ${body[8].value} and frame no ${body[7].value}`,
-        );
-        if (body[8].value) {
-          updateVitals(body);
-        }
-      })
-      .catch((e) => {
-        console.log(
-          'Error in loadin the frame and sending it to the server: ' + e,
-        );
+    if (filepath == 'photo') {
+      const rawData = JSON.stringify({
+        id: 4,
+        name: 'something',
+        pms: 'uk',
+        status: status,
+        photo: 'photo',
       });
+
+      const requestOptions = {
+        method: 'POST',
+        headers: headers,
+        body: rawData,
+      };
+      fetch('http://15.207.11.162:8500/data/uploadPhoto', requestOptions)
+        .then((resp) => {
+          console.log('Fetch response is recieved...');
+          if (resp.ok) {
+            return resp.json();
+          }
+          return resp.text();
+        })
+        .then((body) => {
+          console.log(
+            `The response with result ${body[8].value} and frame no ${body[7].value}`,
+          );
+          if (body[8].value) {
+            updateVitals(body);
+          }
+        })
+        .catch((e) => {
+          console.log(
+            'Error in loading the frame and sending it to the server: ' + e,
+          );
+        });
+    } else {
+      RNFS.readFile(filepath, 'base64')
+        .then((photoFrame) => {
+          const rawData = JSON.stringify({
+            id: 4,
+            name: 'something',
+            pms: 'uk',
+            status: status,
+            photo: photoFrame,
+          });
+
+          const requestOptions = {
+            method: 'POST',
+            headers: headers,
+            body: rawData,
+          };
+          return fetch(
+            'http://15.207.11.162:8500/data/uploadPhoto',
+            requestOptions,
+          );
+        })
+        .then((resp) => {
+          console.log('Fetch response is recieved...');
+          if (resp.ok) {
+            return resp.json();
+          }
+          return resp.text();
+        })
+        .then((body) => {
+          console.log(
+            `The response with result ${body[8].value} and frame no ${body[7].value}`,
+          );
+          if (body[8].value) {
+            updateVitals(body);
+          }
+        })
+        .catch((e) => {
+          console.log(
+            'Error in loading the frame and sending it to the server: ' + e,
+          );
+        });
+    }
   };
 
   // const readFile = async (filepath) => {};
@@ -141,7 +179,7 @@ const VitalsCardContainer = (props) => {
   React.useEffect(() => {
     const onConvert = (obj) => {
       console.log(obj.msg);
-      sendFrame(obj.uriPath, 0);
+      // sendFrame('photo', 0);
     };
 
     const onError = (msg) => {
@@ -151,12 +189,12 @@ const VitalsCardContainer = (props) => {
     const eventEmitter = new NativeEventEmitter(NativeModules.RNJavaCVLib);
     const eventListener = eventEmitter.addListener('frameEvent', (event) => {
       // try {
-      // if (event.lastReq) {
-      //   sendFrame('photo', 0);
-      // } else {
-      //   sendFrame(event.uriPath);
-      // }
-      sendFrame(event.uriPath);
+      if (event.lastReq) {
+        sendFrame('photo', 0);
+      } else {
+        sendFrame(event.uriPath);
+      }
+      // sendFrame(event.uriPath);
     });
 
     props
