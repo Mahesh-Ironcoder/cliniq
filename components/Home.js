@@ -72,29 +72,13 @@ const Home = (props) => {
   const handleScan = () => {
     console.log('Handling scan: ');
     setIsScanning(true);
-    // camRef.current.resumePreview();
-    // setTimeout(() => {
-    //   setIsScanning(false);
-    // }, 10000);
   };
 
-  // const handleTakePic = async () => {
-  //   try {
-  //     return await camRef.current.takePictureAsync({
-  //       base64: true,
-  //       qualit: 0.5,
-  //       doNotSave: true,
-  //     });
-  //   } catch (e) {
-  //     console.error('Erro in taking pickture; ', e);
-  //     return null;
-  //   }
-  // };
   const handleRecording = async () => {
     try {
-      recordData = await camRef.current.recordAsync({
+      let recordData = await camRef.current.recordAsync({
         quality: RNCamera.Constants.VideoQuality['480p'],
-        maxDuration: 15,
+        maxDuration: 1,
         orientation: RNCamera.Constants.Orientation.portrait,
         fixOrientation: true,
       });
@@ -104,20 +88,6 @@ const Home = (props) => {
       console.log('Error in recording: ', e);
     }
   };
-
-  // const handleModalActions = (ma) => {
-  //   console.log('handleModalActions');
-
-  //   if (ma) {
-  //     authDispatch({type: 'biometrics', payload: {status: true, askAgain: 0}});
-  //   } else {
-  //     authDispatch({
-  //       type: 'biometrics',
-  //       payload: {status: false, askAgain: Date.now() + 86400000},
-  //     });
-  //   }
-  //   setAskModel(false);
-  // };
 
   if (isFocused) {
     return (

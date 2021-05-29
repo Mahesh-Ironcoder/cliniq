@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     color: 'rgba(95, 95, 95, 1)',
   },
   value: {
-    fontSize: 34,
+    fontSize: 28,
     fontWeight: '100',
   },
 });

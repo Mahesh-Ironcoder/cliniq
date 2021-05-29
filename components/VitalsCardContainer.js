@@ -7,6 +7,8 @@ import {
   Animated,
   Pressable,
   Image,
+  NativeEventEmitter,
+  NativeModules,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import FullVitals from './FullVitals';
@@ -50,34 +52,7 @@ const reducer = (prevState, action) => {
 const VitalsCardContainer = (props) => {
   const [loading, setLoading] = React.useState(true);
   const [vitals, setVitals] = React.useState(idata);
-  const [converted, setConverted] = React.useState(false);
   const [imgUri, setImgUri] = React.useState('');
-
-  /* React.useEffect(() => {
-    // setTimeout(() => {
-    //   setLoading(false);
-    //   setVitals(data);
-    // }, 3000);
-    let formData = new FormData();
-    (async () => {
-      try {
-        let recdata = await props.pictureData();
-        formData.append('video', {
-          uri: recdata.uri,
-          type: 'video/mp4',
-          name: 'video.mp4',
-        });
-        resp = await fetch('http://0.0.0.0:5000/convertToFrames', {
-          method: 'POST',
-          body: formData,
-        });
-        let data = await resp.json();
-        console.log('Response time: ', data.timetaken);
-      } catch (e) {
-        console.log('Error in vitals data: ', e);
-      }
-    })();
-  }, [vitals]); */
 
   const screen = useWindowDimensions();
   const drawerAnim = React.useState(new Animated.Value(0))[0];
@@ -99,31 +74,6 @@ const VitalsCardContainer = (props) => {
     }).start();
   };
 
-  const readFile = async (file) => {
-    console.log('readFile called');
-    try {
-      let frame = await RNFS.readFile(file.path, 'base64');
-      return frame;
-    } catch (e) {
-      console.error('Error getting file ' + file.name + ': ', e);
-    }
-  };
-
-  const getFrames = async () => {
-    console.log('getFrames called');
-    try {
-      let frames = await RNFS.readDir(`${RNFS.DocumentDirectoryPath}/frames`);
-      console.log('All the frames are: ', frames);
-      return Promise.all(
-        frames.map((f, id) => {
-          return readFile(f);
-        }),
-      );
-    } catch (e) {
-      console.error('Error accessing frames dir: ', e);
-    }
-  };
-
   const updateVitals = (respText) => {
     console.log('Response text', respText);
     let data = {};
@@ -140,113 +90,90 @@ const VitalsCardContainer = (props) => {
     setVitals(data);
   };
 
-  const sendFrame = async (photoFrame) => {
-    let myHeaders = new Headers();
-    myHeaders.append('Content-Type', 'application/json');
+  const sendFrame = (filepath, status = 1) => {
+    console.log('Send frame is called');
+    const headers = new Headers();
+    headers.append('Content-Type', 'application/json');
 
-    let formData = JSON.stringify({
-      id: '4',
-      name: 'SomeName',
-      pms: 'uk',
-      status: '1',
-      photo: photoFrame,
-    });
+    RNFS.readFile(filepath, 'base64')
+      .then((photoFrame) => {
+        const rawData = JSON.stringify({
+          id: 4,
+          name: 'something',
+          pms: 'uk',
+          status,
+          photo: photoFrame,
+        });
 
-    let requestOptions = {
-      method: 'POST',
-      headers: myHeaders,
-      body: formData,
-      redirect: 'follow',
-    };
-
-    try {
-      let response = await fetch(
-        'http://15.207.11.162:8500/data/uploadPhoto',
-        // 'http://0.0.0.0:5000/uploadTest',
-        requestOptions,
-      );
-      if (response.ok) {
-        let body = await response.json();
-        // updateVitals(body);
-        console.log('Result is: ', body[8].value);
+        const requestOptions = {
+          method: 'POST',
+          headers: headers,
+          body: rawData,
+        };
+        return fetch(
+          'http://15.207.11.162:8500/data/uploadPhoto',
+          requestOptions,
+        );
+      })
+      .then((resp) => {
+        console.log('Fetch response is recieved...');
+        if (resp.ok) {
+          return resp.json();
+        }
+      })
+      .then((body) => {
+        console.log(
+          `The response with result ${body[8].value} and frame no ${body[7].value}`,
+        );
         if (body[8].value) {
           updateVitals(body);
         }
-      }
-    } catch (e) {
-      console.error(
-        'Error sending request for photoframe ' + photoFrame.name + ': ',
-        e,
-      );
-    }
+      })
+      .catch((e) => {
+        console.log(
+          'Error in loadin the frame and sending it to the server: ' + e,
+        );
+      });
   };
 
-  const sendFramesAndUpdate = async () => {
-    console.log('sendFramesAndUpdate called');
-    try {
-      let frames = await getFrames();
-      setImgUri(frames[0]);
-      frames.forEach((f, id) => {
-        console.log('Sending request for frame - ', id);
-        sendFrame(f);
-      });
-    } catch (e) {
-      console.error('Error getting all frames at once: ', e);
-    }
-  };
+  // const readFile = async (filepath) => {};
 
   React.useEffect(() => {
-    const onConvert = (msg) => {
-      console.log(msg);
-      sendFramesAndUpdate();
+    const onConvert = (obj) => {
+      console.log(obj.msg);
+      sendFrame(obj.uriPath, 0);
     };
+
     const onError = (msg) => {
       console.log(msg);
     };
-    (async () => {
-      try {
-        let vid = await props.pictureData();
-        JavaCV.getFramesFromVideo(vid.uri, onError, onConvert);
-      } catch (e) {
-        console.log('Error in showing files', e);
-      }
-    })();
-  }, [converted]);
 
-  // React.useEffect(() => {
-  //   let myHeaders = new Headers();
-  //   myHeaders.append('Content-Type', 'application/json');
+    const eventEmitter = new NativeEventEmitter(NativeModules.RNJavaCVLib);
+    const eventListener = eventEmitter.addListener('frameEvent', (event) => {
+      // try {
+      // if (event.lastReq) {
+      //   sendFrame('photo', 0);
+      // } else {
+      //   sendFrame(event.uriPath);
+      // }
+      sendFrame(event.uriPath);
+    });
 
-  //   let formData = JSON.stringify({
-  //     id: '5',
-  //     name: 'SomeName',
-  //   });
+    props
+      .pictureData()
+      .then((video) => {
+        console.log('Video rec completed and sending for frame extraction...');
+        JavaCV.getFramesFromVideo(video.uri, onError, onConvert);
+      })
+      .catch((e) => {
+        console.log('@VitalsCardContainer - Error in getting the picture data');
+      });
 
-  //   let requestOptions = {
-  //     method: 'POST',
-  //     headers: myHeaders,
-  //     body: formData,
-  //     redirect: 'follow',
-  //   };
-  //   (async () => {
-  //     try {
-  //       let response = await fetch(
-  //         'http://127.0.0.1:5000/uploadTest',
-  //         requestOptions,
-  //       );
-  //       if (response.ok) {
-  //         let body = await response.json();
-  //         // updateVitals(body);
-  //         console.log('Result is: ', body[8].value);
-  //         if (body[8].value) {
-  //           updateVitals(body);
-  //         }
-  //       }
-  //     } catch (e) {
-  //       console.error('Error sending request to localhost ', e);
-  //     }
-  //   })();
-  // }, [vitals]);
+    return () => {
+      console.log('Component is destroyed...Removing the event listener');
+      eventListener.remove();
+    };
+  }, []);
 
   return (
     <>
@@ -344,57 +271,92 @@ const styles = StyleSheet.create({
   },
 });
 
-// const [state, dispatch] = React.useReducer(reducer, {
-//   loading: true,
-//   vitals: idata,
-// });
+/* React.useEffect(() => {
+    // setTimeout(() => {
+    //   setLoading(false);
+    //   setVitals(data);
+    // }, 3000);
+    let formData = new FormData();
+    (async () => {
+      try {
+        let recdata = await props.pictureData();
+        formData.append('video', {
+          uri: recdata.uri,
+          type: 'video/mp4',
+          name: 'video.mp4',
+        });
+        resp = await fetch('http://0.0.0.0:5000/convertToFrames', {
+          method: 'POST',
+          body: formData,
+        });
+        let data = await resp.json();
+        console.log('Response time: ', data.timetaken);
+      } catch (e) {
+        console.log('Error in vitals data: ', e);
+      }
+    })();
+  }, [vitals]); */
 
-// const sendFrameRequest = async (imageData) => {
-//   // console.log('Sending request', imageData);
-//   const data = {
-//     id: 4,
-//     name: 'something',
-//     pms: 'uk',
-//     status: 1,
-//     photo: imageData,
-//   };
-//   try {
-//     let resp = await fetch('http://15.207.11.162:8500/data/uploadPhoto', {
-//       method: 'POST',
-//       mode: 'cors',
-//       headers: {'Content-type': 'application/json'},
-//       body: JSON.stringify(data),
-//     });
-//     // resp.
-//     if (resp.ok) {
-//       return resp.json();
-//     }
-//     return resp;
-//   } catch (e) {
-//     console.log('Error in requesting: ', e);
-//     return 'failed';
-//   }
-// };
+/* React.useEffect(() => {
+    let myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/json');
 
-// async function newFunction() {
-//   let imgData = await props.pictureData();
-//   let base64Str = imgData.base64;
-//   console.log('Base64 string: ', base64Str.slice(0, 50));
-//   let result = await sendFrameRequest(base64Str);
-//   console.log('Image: ', imgData.width);
-//   console.log('Result: ', result);
-//   return result;
+    let formData = JSON.stringify({
+      id: '5',
+      name: 'SomeName',
+    });
 
-//   //////
-//   let picPromises = [];
-//   for (let i = 0; i < 10; i++) {
-//     picPromises.push(props.pictureData());
-//   }
-//   let imgData = await Promise.all(picPromises);
-//   // console.log('Image data for 10', imgData);
-//   return Promise.all(
-//     imgData.map(({base64}) => {
-//       sendFrameRequest(base64);
-//     }),
-//   );
-// }
+    let requestOptions = {
+      method: 'POST',
+      headers: myHeaders,
+      body: formData,
+      redirect: 'follow',
+    };
+    (async () => {
+      try {
+        let response = await fetch(
+          'http://127.0.0.1:5000/uploadTest',
+          requestOptions,
+        );
+        if (response.ok) {
+          let body = await response.json();
+          // updateVitals(body);
+          console.log('Result is: ', body[8].value);
+          if (body[8].value) {
+            updateVitals(body);
+          }
+        }
+      } catch (e) {
+        console.error('Error sending request to localhost ', e);
+      }
+    })();
+  }, [vitals]); */
+
+/*   const getFrames = async () => {
+    console.log('getFrames called');
+    try {
+      let frames = await RNFS.readDir(`${RNFS.DocumentDirectoryPath}/frames`);
+      console.log('All the frames are: ', frames);
+      return Promise.all(
+        frames.map((f, id) => {
+          return readFile(f);
+        }),
+      );
+    } catch (e) {
+      console.error('Error accessing frames dir: ', e);
+    }
+  };
+
+  const sendFramesAndUpdate = async () => {
+    console.log('sendFramesAndUpdate called');
+    try {
+      let frames = await getFrames();
+      setImgUri(frames[0]);
+      frames.forEach((f, id) => {
+        console.log('Sending request for frame - ', id);
+        sendFrame(f);
+      });
+    } catch (e) {
+      console.error('Error getting all frames at once: ', e);
+    }
+  }; */
