@@ -1,6 +1,7 @@
 import AppButton from './AppButton';
+import {AppContext} from '../App';
 
-import React from 'react';
+import React, {useContext} from 'react';
 
 import {
   View,
@@ -12,31 +13,14 @@ import {
   PlatformColor,
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
-import {Formik, ErrorMessage} from 'formik';
+import {Formik} from 'formik';
 import * as Yup from 'yup';
 
 //--------------------------Done with imports-----------------------------------------------------
 
 const Login = (props) => {
-  const [userName, setUserName] = React.useState('');
-  const [password, setPassword] = React.useState('');
-
+  const {onSignIn} = useContext(AppContext);
   const {navigation} = props;
-
-  const handleLogin = () => {
-    if (userName !== '' && password !== '') {
-      auth()
-        .signInWithEmailAndPassword(userName, password)
-        .then((user) => {
-          console.log('Logged in as: ', user.user.displayName);
-        })
-        .catch((e) => {
-          console.log('Error in signing you in');
-        });
-    } else {
-      Alert.alert('Please fill, both username and password');
-    }
-  };
 
   return (
     <View style={styles.loginWrapper}>
@@ -53,10 +37,11 @@ const Login = (props) => {
               .signInWithEmailAndPassword(values.email, values.password)
               .then((userCreds) => {
                 console.log('Signed in as: ', userCreds.user.displayName);
+                onSignIn(userCreds.user.uid, true, false);
                 formikActions.setSubmitting(false);
               })
               .catch((e) => {
-                console.error('Error in signing in: ', error);
+                console.error('Error in signing in: ', e);
               });
           }}>
           {(props) => (
@@ -69,6 +54,7 @@ const Login = (props) => {
                   onChangeText={props.handleChange('email')}
                   onBlur={props.handleBlur('email')}
                   value={props.values.email}
+                  autoCompleteType="email"
                 />
                 {props.touched.email && props.errors.email ? (
                   <Text style={styles.error}>{props.errors.email}</Text>
