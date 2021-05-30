@@ -1,31 +1,61 @@
 import 'react-native-gesture-handler';
 
-import ThemeContextProvider from './contexts/ThemeContext';
-import AuthContextProvider, {authContext} from './contexts/AuthContext';
-import AppNavigator from './components/AppNavigator';
+import Login from './components/Login';
+import Home from './components/Home';
+import CreateAccount from './components/CreateAccount';
+import ResetPassword from './components/ResetPassword';
 
-import React from 'react';
-import {StyleSheet, StatusBar} from 'react-native';
+import React, {useState, useEffect, useContext} from 'react';
+import {StyleSheet, StatusBar, View, Text} from 'react-native';
+import {createStackNavigator} from '@react-navigation/stack';
 import {NavigationContainer} from '@react-navigation/native';
-import TestJavaCV from './components/TestJavaCV';
+import auth from '@react-native-firebase/auth';
 //--------------------------Done with imports-----------------------------------------------------
 
+const Stack = createStackNavigator();
+
 function App() {
-  React.useEffect(() => {
+  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState("");
+
+  // Handle user state changes
+  function AuthStateChanged(user) {
+    setUser(user);
+    if (initializing) setInitializing(false);
+  }
+  useEffect(() => {
+    const subscriber = auth().onAuthStateChanged(AuthStateChanged);
+    return subscriber; // unsubscribe on unmount
+  }, []);
+
+  useEffect(() => {
     StatusBar.setTranslucent(true);
     StatusBar.setBackgroundColor('transparent');
     StatusBar.setBarStyle('dark-content');
   });
+
+  if (initializing)
+    return (
+      <View>
+        <Text>Loading state...</Text>
+      </View>
+    );
+
   return (
     <NavigationContainer>
-      <ThemeContextProvider>
-        <AuthContextProvider>
-          <AppNavigator />
-        </AuthContextProvider>
-      </ThemeContextProvider>
+      <Stack.Navigator screenOptions={{headerShown: false}}>
+        {user ? (
+          <Stack.Screen name="Home" component={Home} />
+        ) : (
+          <>
+            <Stack.Screen name="Login" component={Login} />
+            <Stack.Screen name="Reset" component={ResetPassword} />
+            <Stack.Screen name="NewAccount" component={CreateAccount} />
+          </>
+        )}
+      </Stack.Navigator>
     </NavigationContainer>
   );
-  // return <TestJavaCV />;
 }
 
 const appStyles = StyleSheet.create({

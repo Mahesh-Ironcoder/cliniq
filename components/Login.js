@@ -1,5 +1,4 @@
 import AppButton from './AppButton';
-import {authContext} from '../contexts/AuthContext';
 
 import React from 'react';
 
@@ -12,6 +11,9 @@ import {
   Alert,
   PlatformColor,
 } from 'react-native';
+import auth from '@react-native-firebase/auth';
+import {Formik, ErrorMessage} from 'formik';
+import * as Yup from 'yup';
 
 //--------------------------Done with imports-----------------------------------------------------
 
@@ -19,17 +21,18 @@ const Login = (props) => {
   const [userName, setUserName] = React.useState('');
   const [password, setPassword] = React.useState('');
 
-  const {authDispatch} = React.useContext(authContext);
-
   const {navigation} = props;
 
   const handleLogin = () => {
     if (userName !== '' && password !== '') {
-      authDispatch({type: 'loading', payload: true});
-      authDispatch({
-        type: 'login',
-        payload: {userName, password, local: false},
-      });
+      auth()
+        .signInWithEmailAndPassword(userName, password)
+        .then((user) => {
+          console.log('Logged in as: ', user.user.displayName);
+        })
+        .catch((e) => {
+          console.log('Error in signing you in');
+        });
     } else {
       Alert.alert('Please fill, both username and password');
     }
@@ -39,26 +42,66 @@ const Login = (props) => {
     <View style={styles.loginWrapper}>
       <View style={styles.loginContainer}>
         <Text style={styles.loginHeader}>CliniQ</Text>
-        <TextInput
-          placeholder="Username"
-          value={userName}
-          onChangeText={(text) => setUserName(text)}
-          style={styles.inputStyle}
-        />
-        <TextInput
-          placeholder="Password"
-          secureTextEntry
-          value={password}
-          onChangeText={(text) => setPassword(text)}
-          style={styles.inputStyle}
-        />
-        <AppButton
-          title="Login"
-          onPress={handleLogin}
-          style={styles.loginBtn}
-          textStyle={styles.loginText}
-          rounded
-        />
+        <Formik
+          initialValues={{email: '', password: ''}}
+          validationSchema={Yup.object({
+            email: Yup.string().email('Invalid Email').required('Required'),
+            password: Yup.string().required('Required'),
+          })}
+          onSubmit={(values, formikActions) => {
+            auth()
+              .signInWithEmailAndPassword(values.email, values.password)
+              .then((userCreds) => {
+                console.log('Signed in as: ', userCreds.user.displayName);
+                formikActions.setSubmitting(false);
+              })
+              .catch((e) => {
+                console.error('Error in signing in: ', error);
+              });
+          }}>
+          {(props) => (
+            <>
+              {/*---------------------Email container-------------------------------*/}
+              <View style={styles.colContainer}>
+                <TextInput
+                  placeholder="Email"
+                  style={styles.inputStyle}
+                  onChangeText={props.handleChange('email')}
+                  onBlur={props.handleBlur('email')}
+                  value={props.values.email}
+                />
+                {props.touched.email && props.errors.email ? (
+                  <Text style={styles.error}>{props.errors.email}</Text>
+                ) : null}
+              </View>
+
+              {/*---------------------Password container-------------------------------*/}
+              <View style={styles.colContainer}>
+                <TextInput
+                  placeholder="Password"
+                  secureTextEntry
+                  style={styles.inputStyle}
+                  onChangeText={props.handleChange('password')}
+                  onBlur={props.handleBlur('password')}
+                  value={props.values.password}
+                />
+                {props.touched.password && props.errors.password ? (
+                  <Text style={styles.error}>{props.errors.password}</Text>
+                ) : null}
+              </View>
+
+              <AppButton
+                title="Sign In"
+                onPress={props.handleSubmit}
+                style={styles.loginBtn}
+                textStyle={styles.loginText}
+                loading={props.isSubmitting}
+                disabled={props.isSubmitting}
+                rounded
+              />
+            </>
+          )}
+        </Formik>
         <View style={styles.extraOptionStyles}>
           <Pressable>
             <Text
@@ -126,6 +169,18 @@ const styles = StyleSheet.create({
     fontSize: 34,
     fontWeight: 'bold',
     margin: 10,
+  },
+  colContainer: {
+    // paddingHorizontal: ,
+    width: '100%',
+    justifyContent: 'center',
+  },
+  error: {
+    margin: 8,
+    fontSize: 14,
+    color: 'red',
+    fontWeight: 'bold',
+    flexGrow: 1,
   },
 });
 export default Login;

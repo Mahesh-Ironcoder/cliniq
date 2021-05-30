@@ -19,13 +19,12 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import {RNCamera} from 'react-native-camera';
 import ProgressBar from './ProgressBar';
 import VitalsCardContainer from './VitalsCardContainer';
+import auth from '@react-native-firebase/auth';
 
 //--------------------------Done with imports-----------------------------------------------------
 
 const Home = (props) => {
-  const {biometricsSet, authDispatch} = React.useContext(authContext);
   const [isScanning, setIsScanning] = React.useState(false);
-  // const [askModel, setAskModel] = React.useState(!biometricsSet.status);
 
   const camRef = React.useRef(null);
   const drawerRef = React.useRef(null);
@@ -61,8 +60,14 @@ const Home = (props) => {
   };
 
   const handleLogout = () => {
-    authDispatch({type: 'loading', payload: true});
-    authDispatch({type: 'logout'});
+    auth()
+      .signOut()
+      .then((res) => {
+        console.log('Signed out');
+      })
+      .catch((e) => {
+        console.log('Error in signing out: ', e);
+      });
   };
 
   const handleReTest = () => {
