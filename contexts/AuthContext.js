@@ -1,94 +1,157 @@
-import React, {useReducer, createContext, useEffect, useState} from 'react';
-import {BackHandler} from 'react-native';
+import 'react-native-gesture-handler';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import ReactNativeBiometrics from 'react-native-biometrics';
+
 import auth from '@react-native-firebase/auth';
 
-//--------------------------Done with imports-----------------------------------------------------
+import {NavigationContainer} from '@react-navigation/native';
 
-export const authContext = createContext(null);
+import React, {useState, useEffect, createContext} from 'react';
 
-const initialState = {
-  status: false,
-  user: {
-    token: null,
-    username: '',
-    password: '',
-    expiration: 0,
-  },
-  authenticatedLocally: false,
-  biometrics: {status: false, type: 0},
-  loading: false,
-  local: false,
-};
+import {StatusBar, View, Text, BackHandler} from 'react-native';
 
-const AuthContextProvider = (props) => {
+import ReactNativeBiometrics from 'react-native-biometrics';
+//--------------------------Done with imports------------------------------------------------------
+
+export const AppContext = createContext(null);
+
+function AuthContextProvider(props) {
   const [initializing, setInitializing] = useState(true);
-  const [user, setUser] = useState();
+  const {user, onUser: setUser} = props;
+
+  //------------------------utility functions------------------------------------------------------
+
+  function clearUserBiometric() {
+    // AsyncStorage.removeItem(userId).catch((e) => {
+    //   console.log('Error in accessing the storage');
+    // });
+    AsyncStorage.clear().catch((e) => {
+      console.log('Error in clearing the asyncStorage', e);
+    });
+  }
+
+  function addUserBiometric(userId, bioAuth, ask) {
+    let value = {
+      bioAuth: {
+        enabled: bioAuth,
+        authenticated: false,
+        askNextTime: ask,
+      },
+    };
+    toString();
+    AsyncStorage.setItem(JSON.stringify(userId), JSON.stringify(value)).catch(
+      (e) => {
+        console.log('Error', e);
+      },
+    );
+  }
+
+  async function verifyUserBiometric(userId) {
+    async function authenticateUser(prevData) {
+      try {
+        let authRes = await ReactNativeBiometrics.simplePrompt({
+          promptMessage: 'Using your device authentication...',
+          cancelButtonText: 'Cancel',
+        });
+
+        const {success} = authRes;
+        if (success) {
+          console.log('successful biometrics provided');
+          AsyncStorage.setItem(
+            JSON.stringify(userId),
+            JSON.stringify({
+              ...prevData,
+              bioAuth: {...prevData.bioAuth, authenticated: true},
+            }),
+          ).catch((e) => {
+            console.log('Error in updating the persistent data', e);
+          });
+        } else {
+          console.log('user cancelled biometric prompt');
+          BackHandler.exitApp();
+        }
+      } catch (e) {
+        console.log('Error showing biometrics', e);
+      }
+    }
+
+    let authPersistent;
+
+    try {
+      authPersistent = await AsyncStorage.getItem(JSON.stringify(userId));
+      // } catch (e) {
+      //   console.log(
+      //     'Error in biometric authentication - cannot access asyncstorage',
+      //     e,
+      //   );
+      // }
+
+      // try {
+      const {
+        bioAuth: {enabled, authenticated},
+      } = JSON.parse(authPersistent);
+      if (enabled) {
+        await authenticateUser(authPersistent);
+      }
+    } catch (e) {
+      console.log('Error in biometric authentication', e);
+      BackHandler.exitApp();
+    }
+  }
 
   // Handle user state changes
   function AuthStateChanged(user) {
+    if (!user) {
+      clearUserBiometric();
+    }
     setUser(user);
     if (initializing) setInitializing(false);
   }
 
+  //-----------------------------Effects----------------------------------------------------------
   useEffect(() => {
     const subscriber = auth().onAuthStateChanged(AuthStateChanged);
     return subscriber; // unsubscribe on unmount
   }, []);
 
   useEffect(() => {
-    console.info('auth context rendered ', Date.now());
-    AsyncStorage.getItem('_user')
-      .then((value) => {
-        if (value !== null) {
-          console.log('value: ', value);
-          let parsedValue = JSON.parse(value);
-          console.log('parsed value: ', parsedValue);
+    if (user && !initializing) {
+      console.log('User: ', user);
+      verifyUserBiometric(user.uid);
+    }
+  }, [user, initializing]);
 
-          if (parsedValue && parsedValue.biometrics.status) {
-            console.log('pared value: ', parsedValue.biometrics.type);
-            parsedValue.biometrics.type &&
-              ReactNativeBiometrics.simplePrompt({
-                promptMessage: 'Authenticate',
-              })
-                .then((st) => {
-                  if (st.success) {
-                    authDispatch({
-                      type: 'login',
-                      payload: {...value, local: true},
-                    });
-                  } else {
-                    console.log('Not verified');
-                    BackHandler.exitApp();
-                  }
-                })
-                .catch((e) => {
-                  console.error('@AuthContext - biometrics: Error ', e);
-                  BackHandler.exitApp();
-                });
-          } else {
-            console.info('no biometrics: ');
-            setAskModal(true);
-          }
-        }
-      })
-      .catch((e) => {
-        console.error('Error in auth effect: ', e);
-      });
-  }, []);
+  useEffect(() => {
+    StatusBar.setTranslucent(true);
+    StatusBar.setBackgroundColor('transparent');
+    StatusBar.setBarStyle('dark-content');
+  });
 
-  if (initializing) return null;
+  if (initializing)
+    return (
+      <View
+        style={{
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100%',
+        }}>
+        <Text>Loading state...</Text>
+      </View>
+    );
 
   return (
-    <authContext.Provider
-      value={{
-        signIn: auth().signInWithEmailAndPassword,
-        signOut: auth().signOut,
-      }}>
-      {props.children}
-    </authContext.Provider>
+    <AppContext.Provider value={{onSignIn: addUserBiometric}}>
+      <NavigationContainer>{props.children}</NavigationContainer>
+    </AppContext.Provider>
   );
-};
+}
 
 export default AuthContextProvider;
+
+/**
+ * Sample React Native App
+ * https://github.com/facebook/react-native
+ *
+ * @format
+ * @flow strict-local
+ */

@@ -1,5 +1,5 @@
 import AppButton from './AppButton';
-import {AppContext} from '../App';
+import {AppContext} from '../contexts/AuthContext';
 
 import React, {useContext} from 'react';
 
