@@ -11,6 +11,10 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MoreOptions from './MoreOptions';
 
+//remove after done
+import AppButton from './AppButton';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+
 //--------------------------Done with imports-----------------------------------------------------
 const Tab = createBottomTabNavigator();
 const Home = (props) => {
@@ -45,21 +49,50 @@ const Home = (props) => {
       console.log('Error in recording: ', e);
     }
   };
+  // const handleGrabFrame = () => {
+  //   camRef.current.pausePreview();
+  // };
 
   function HomeScreen() {
     return (
       <View style={homescreenStyles.homeContainer}>
-        <CustomCamera
+        {/* <CustomCamera
           ref={camRef}
           onScan={handleScan}
           hideControls={isScanning}
-        />
+        /> */}
         {isScanning ? (
           <VitalsCardContainer
             onReTest={handleReTest}
-            pictureData={handleRecording}
+            // pictureData={handleRecording}
+            // cam={camRef.current}
           />
-        ) : null}
+        ) : (
+          <View style={homescreenStyles.hmBtnGrp}>
+            <AppButton
+              style={{
+                flexBasis: 200,
+                backgroundColor: '#F2AB1D',
+              }}
+              textStyle={{color: 'white', fontSize: 18}}
+              title="Start Scan"
+              rounded
+              onPress={handleScan || null}
+            />
+            <Icon.Button
+              name="camera-rear"
+              size={25}
+              backgroundColor="#37BCDF"
+              color="white"
+              // onPress={handleFlip}
+              >
+              Flip
+            </Icon.Button>
+            <Text style={homescreenStyles.bottomText}>
+              Click on start to begin the process
+            </Text>
+          </View>
+        )}
       </View>
     );
   }
@@ -141,6 +174,25 @@ const homescreenStyles = StyleSheet.create({
     height: '200',
     position: 'absolute',
     backgroundColor: 'red',
+  },
+
+  // remove after testing
+  hmBtnGrp: {
+    width: '100%',
+    position: 'absolute',
+    height: '15%',
+    bottom: 30,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    alignContent: 'space-between',
+  },
+  bottomText: {
+    // flexBasis: '100%',
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '300',
   },
 });
 

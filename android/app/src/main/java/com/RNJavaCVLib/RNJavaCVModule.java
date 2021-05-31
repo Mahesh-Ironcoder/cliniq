@@ -19,8 +19,10 @@ import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
 import org.bytedeco.javacv.OpenCVFrameConverter;
+import org.bytedeco.javacv.VideoInputFrameGrabber;
 import org.bytedeco.opencv.opencv_core.Mat;
 import org.bytedeco.opencv.opencv_core.Point2f;
+import org.bytedeco.opencv.opencv_videoio.VideoCapture;
 
 import static org.bytedeco.opencv.global.opencv_imgproc.*;
 
@@ -30,10 +32,13 @@ import java.io.IOException;
 
 public class RNJavaCVModule extends ReactContextBaseJavaModule {
     private final ReactApplicationContext reactContext;
+    private final String LOG_TAG = "RNJavaCV";
+    private final OpenCVFrameConverter.ToMat convertToMat;
 
     public RNJavaCVModule(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
+        convertToMat = new OpenCVFrameConverter.ToMat();
     }
 
     @Override
@@ -46,8 +51,53 @@ public class RNJavaCVModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void getRealTimeFrame(String camIndex, Callback errorCallback, Callback successCallback){
+        Log.d(LOG_TAG, "Called to getRealTime frame method: ");
+        try{
+            VideoInputFrameGrabber grabber = new VideoInputFrameGrabber(0);
+            Log.d(LOG_TAG, "After videoCapture init: ");
+//            boolean success = grabber.open(0);
+            grabber.start(0);
+            Log.d(LOG_TAG, "After videoCapture open: ");
+//            Mat imgframe = new Mat();
+            Frame frame;
+            String ofn;
+            int i = 1;
+
+            String framesDirectory;
+            while((frame = grabber.grab())!=null && i<320){
+                Log.d(LOG_TAG, "videoCapture opened for "+String.valueOf(i));
+//                if(!grabber.read(imgframe)){
+//                    break;
+//                }
+//                frame = convertToMat.convert(imgframe);
+                ofn = String.format("frame%03d.png", i);
+                frame = rotateFrame(frame, 90);
+                framesDirectory = createImageFile(frame, ofn);
+                WritableMap eventParams = Arguments.createMap();
+                eventParams.putString("uriPath", framesDirectory + "/" + ofn);
+                eventParams.putBoolean("lastReq", false);
+                sendExtEvent(reactContext, "frameEvent", eventParams);
+                i++;
+            }
+            grabber.release();
+            grabber.close();
+
+            WritableMap completeParams = Arguments.createMap();
+            completeParams.putBoolean("lastReq", true);
+            completeParams.putString("msg", "Completed frames");
+            Log.d(LOG_TAG, "completed getRealTime frame method: ");
+//            sendExtEvent(reactContext, "frameEvent", completeParams);
+            successCallback.invoke(completeParams);
+        }catch(Exception e){
+            Log.d(LOG_TAG, "Error in extracting from videoCapture: " + e.getMessage());
+            errorCallback.invoke("Error in extracting from videoCapture: " + e.getMessage());
+        }
+    }
+
+    @ReactMethod
     public void getFramesFromVideo(String fileName, Callback errorCallback, Callback successCallback) {
-        String LOG_TAG = "RNJavaCV";
+
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(fileName);
         try {
             Frame frame;
@@ -91,7 +141,7 @@ public class RNJavaCVModule extends ReactContextBaseJavaModule {
     }
 
     private Frame rotateFrame(Frame frame, double angle) {
-        OpenCVFrameConverter.ToMat convertToMat = new OpenCVFrameConverter.ToMat();
+//        OpenCVFrameConverter.ToMat convertToMat = new OpenCVFrameConverter.ToMat();
         Mat matImage = convertToMat.convert(frame);
         Point2f centerPoint = new Point2f(matImage.cols() / 2.0f, matImage.rows() / 2.0f);
         Mat rot_mat = getRotationMatrix2D(centerPoint, angle, 1);

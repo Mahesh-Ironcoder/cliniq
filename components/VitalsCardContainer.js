@@ -133,6 +133,7 @@ const VitalsCardContainer = (props) => {
     } else {
       RNFS.readFile(filepath, 'base64')
         .then((photoFrame) => {
+          setImgUri('data:image/png;base64,' + photoFrame);
           const rawData = JSON.stringify({
             id: 4,
             name: 'something',
@@ -174,8 +175,7 @@ const VitalsCardContainer = (props) => {
     }
   };
 
-  // const readFile = async (filepath) => {};
-
+  /* 
   React.useEffect(() => {
     const onConvert = (obj) => {
       console.log(obj.msg);
@@ -212,6 +212,52 @@ const VitalsCardContainer = (props) => {
       eventListener.remove();
     };
   }, []);
+ */
+
+  React.useEffect(() => {
+    // const {cam} = props;
+    const onComplete = (obj) => {
+      console.log(obj.msg);
+      sendFrame('photo', 0);
+      // cam.resumePreview();
+    };
+
+    const onError = (msg) => {
+      console.log(msg);
+    };
+
+    try {
+      // cam.pausePreview();
+      JavaCV.getRealTimeFrame('0', onError, onComplete);
+    } catch (e) {
+      console.log('@VitalsCardContainer - Error in getting the frame data', e);
+    }
+
+    const eventEmitter = new NativeEventEmitter(NativeModules.RNJavaCVLib);
+    const eventListener = eventEmitter.addListener('frameEvent', (event) => {
+      // try {
+      if (event.lastReq) {
+        sendFrame('photo', 0);
+      } else {
+        sendFrame(event.uriPath);
+      }
+      // sendFrame(event.uriPath);
+    });
+
+    return () => {
+      console.log('Component is destroyed...Removing the event listener');
+      eventListener.remove();
+    };
+  }, []);
+
+  // React.useEffect(() => {
+  //   const {cam} = props;
+  //   cam.pausePreview();
+  //   let id = setTimeout(() => {
+  //     cam.resumePreview();
+  //     clearTimeout(id);
+  //   }, 3000);
+  // }, []);
 
   return (
     <>
