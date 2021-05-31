@@ -1,69 +1,30 @@
-import AppButton from './AppButton';
 import CustomCamera from './CustomCamera';
-import Scanning from './Vitals';
-import {authContext} from '../contexts/AuthContext';
 
 import React from 'react';
-import {
-  View,
-  Text,
-  DrawerLayoutAndroid,
-  StyleSheet,
-  Image,
-  StatusBar,
-} from 'react-native';
+import {View, Text, StyleSheet} from 'react-native';
 
 import {useIsFocused} from '@react-navigation/core';
-
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import {RNCamera} from 'react-native-camera';
 import ProgressBar from './ProgressBar';
 import VitalsCardContainer from './VitalsCardContainer';
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import MoreOptions from './MoreOptions';
+
+//remove after done
+import AppButton from './AppButton';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 //--------------------------Done with imports-----------------------------------------------------
-
+const Tab = createBottomTabNavigator();
 const Home = (props) => {
-  const {biometricsSet, authDispatch} = React.useContext(authContext);
   const [isScanning, setIsScanning] = React.useState(false);
-  // const [askModel, setAskModel] = React.useState(!biometricsSet.status);
+
+  // const [nav, setNav] = React.useState(true);
 
   const camRef = React.useRef(null);
-  const drawerRef = React.useRef(null);
-  const progressRef = React.useRef(null);
 
   const isFocused = useIsFocused();
-
-  const openDrawer = () => {
-    if (drawerRef) {
-      drawerRef.current.openDrawer();
-    } else {
-      console.log('no drawer');
-    }
-  };
-
-  const drawerNavigationView = () => {
-    return (
-      <View style={homescreenStyles.drawerNavigationStyles}>
-        <Text>CliniQ</Text>
-        <Icon.Button
-          name="account-circle"
-          style={homescreenStyles.drawerNavigationItems}>
-          Profile
-        </Icon.Button>
-        <Icon.Button
-          name="logout"
-          style={homescreenStyles.drawerNavigationItems}
-          onPress={handleLogout}>
-          Log out
-        </Icon.Button>
-      </View>
-    );
-  };
-
-  const handleLogout = () => {
-    authDispatch({type: 'loading', payload: true});
-    authDispatch({type: 'logout'});
-  };
 
   const handleReTest = () => {
     setIsScanning(false);
@@ -88,35 +49,91 @@ const Home = (props) => {
       console.log('Error in recording: ', e);
     }
   };
+  // const handleGrabFrame = () => {
+  //   camRef.current.pausePreview();
+  // };
+
+  function HomeScreen() {
+    return (
+      <View style={homescreenStyles.homeContainer}>
+        {/* <CustomCamera
+          ref={camRef}
+          onScan={handleScan}
+          hideControls={isScanning}
+        /> */}
+        {isScanning ? (
+          <VitalsCardContainer
+            onReTest={handleReTest}
+            // pictureData={handleRecording}
+            // cam={camRef.current}
+          />
+        ) : (
+          <View style={homescreenStyles.hmBtnGrp}>
+            <AppButton
+              style={{
+                flexBasis: 200,
+                backgroundColor: '#F2AB1D',
+              }}
+              textStyle={{color: 'white', fontSize: 18}}
+              title="Start Scan"
+              rounded
+              onPress={handleScan || null}
+            />
+            <Icon.Button
+              name="camera-rear"
+              size={25}
+              backgroundColor="#37BCDF"
+              color="white"
+              // onPress={handleFlip}
+              >
+              Flip
+            </Icon.Button>
+            <Text style={homescreenStyles.bottomText}>
+              Click on start to begin the process
+            </Text>
+          </View>
+        )}
+      </View>
+    );
+  }
+
+  function SettingsScreen() {
+    return (
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <Text>Settings!</Text>
+      </View>
+    );
+  }
 
   if (isFocused) {
     return (
-      <DrawerLayoutAndroid
-        ref={drawerRef}
-        drawerPosition="left"
-        draweWidth={300}
-        renderNavigationView={drawerNavigationView}>
-        <View style={homescreenStyles.homeContainer}>
-          <CustomCamera
-            ref={camRef}
-            onScan={handleScan}
-            hideControls={isScanning}
-          />
-          {isScanning ? (
-            <VitalsCardContainer
-              onReTest={handleReTest}
-              pictureData={handleRecording}
-            />
-          ) : null}
-          {/* <Icon
-            name="expand-less"
-            size={30}
-            color="#fff"
-            style={homescreenStyles.drawer}
-            onPress={openDrawer}
-          /> */}
-        </View>
-      </DrawerLayoutAndroid>
+      <Tab.Navigator
+        tabBarOptions={{
+          style: {height: '6%'},
+          tabStyle: {alignItems: 'center'},
+          labelStyle: {fontSize: 14},
+        }}>
+        <Tab.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{
+            tabBarLabel: 'Home',
+            tabBarIcon: ({color, size}) => (
+              <MaterialIcons name="home" color={color} size={size} />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="More"
+          component={MoreOptions}
+          options={{
+            tabBarLabel: 'More',
+            tabBarIcon: ({color, size}) => (
+              <MaterialIcons name="more-horiz" color={color} size={size} />
+            ),
+          }}
+        />
+      </Tab.Navigator>
     );
   } else {
     return null;
@@ -126,7 +143,8 @@ const Home = (props) => {
 const homescreenStyles = StyleSheet.create({
   homeContainer: {
     width: '100%',
-    height: '100%',
+    // height: '100%',
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -151,6 +169,30 @@ const homescreenStyles = StyleSheet.create({
     padding: 0,
     fontSize: 24,
     textAlign: 'center',
+  },
+  tabNavStyles: {
+    height: '200',
+    position: 'absolute',
+    backgroundColor: 'red',
+  },
+
+  // remove after testing
+  hmBtnGrp: {
+    width: '100%',
+    position: 'absolute',
+    height: '15%',
+    bottom: 30,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    alignContent: 'space-between',
+  },
+  bottomText: {
+    // flexBasis: '100%',
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '300',
   },
 });
 

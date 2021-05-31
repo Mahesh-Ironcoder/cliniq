@@ -1,39 +1,39 @@
 import 'react-native-gesture-handler';
 
-import ThemeContextProvider from './contexts/ThemeContext';
-import AuthContextProvider, {authContext} from './contexts/AuthContext';
-import AppNavigator from './components/AppNavigator';
+import Login from './components/Login';
+import Home from './components/Home';
+import CreateAccount from './components/CreateAccount';
+import ResetPassword from './components/ResetPassword';
 
-import React from 'react';
-import {StyleSheet, StatusBar} from 'react-native';
-import {NavigationContainer} from '@react-navigation/native';
-import TestJavaCV from './components/TestJavaCV';
-//--------------------------Done with imports-----------------------------------------------------
+import {createStackNavigator} from '@react-navigation/stack';
+
+import React, {useState} from 'react';
+
+import AuthContextProvider from './contexts/AuthContext';
+//--------------------------Done with imports------------------------------------------------------
+
+const Stack = createStackNavigator();
 
 function App() {
-  React.useEffect(() => {
-    StatusBar.setTranslucent(true);
-    StatusBar.setBackgroundColor('transparent');
-    StatusBar.setBarStyle('dark-content');
-  });
-  return (
-    <NavigationContainer>
-      <ThemeContextProvider>
-        <AuthContextProvider>
-          <AppNavigator />
-        </AuthContextProvider>
-      </ThemeContextProvider>
-    </NavigationContainer>
-  );
-  // return <TestJavaCV />;
-}
+  // const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState('');
 
-const appStyles = StyleSheet.create({
-  cameraStyle: {
-    width: '100%',
-    height: '100%',
-  },
-});
+  return (
+    <AuthContextProvider onUser={(u) => setUser(u)} user={user}>
+      <Stack.Navigator screenOptions={{headerShown: false}}>
+        {user ? (
+          <Stack.Screen name="Home" component={Home} />
+        ) : (
+          <>
+            <Stack.Screen name="Login" component={Login} />
+            <Stack.Screen name="Reset" component={ResetPassword} />
+            <Stack.Screen name="NewAccount" component={CreateAccount} />
+          </>
+        )}
+      </Stack.Navigator>
+    </AuthContextProvider>
+  );
+}
 
 export default App;
 
