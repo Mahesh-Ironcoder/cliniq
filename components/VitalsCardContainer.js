@@ -217,8 +217,8 @@ const VitalsCardContainer = (props) => {
   React.useEffect(() => {
     // const {cam} = props;
     const onComplete = (obj) => {
-      console.log(obj.msg);
-      sendFrame('photo', 0);
+      console.log(obj);
+      // sendFrame('photo', 0);
       // cam.resumePreview();
     };
 
