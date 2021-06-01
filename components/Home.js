@@ -56,43 +56,19 @@ const Home = (props) => {
   function HomeScreen() {
     return (
       <View style={homescreenStyles.homeContainer}>
-        {/* <CustomCamera
+        <CustomCamera
           ref={camRef}
           onScan={handleScan}
           hideControls={isScanning}
-        /> */}
+        />
         {isScanning ? (
           <VitalsCardContainer
             onReTest={handleReTest}
-            // pictureData={handleRecording}
+            pictureData={handleRecording}
             // cam={camRef.current}
           />
-        ) : (
-          <View style={homescreenStyles.hmBtnGrp}>
-            <AppButton
-              style={{
-                flexBasis: 200,
-                backgroundColor: '#F2AB1D',
-              }}
-              textStyle={{color: 'white', fontSize: 18}}
-              title="Start Scan"
-              rounded
-              onPress={handleScan || null}
-            />
-            <Icon.Button
-              name="camera-rear"
-              size={25}
-              backgroundColor="#37BCDF"
-              color="white"
-              // onPress={handleFlip}
-              >
-              Flip
-            </Icon.Button>
-            <Text style={homescreenStyles.bottomText}>
-              Click on start to begin the process
-            </Text>
-          </View>
-        )}
+        ) : (null)
+        }
       </View>
     );
   }
@@ -197,3 +173,31 @@ const homescreenStyles = StyleSheet.create({
 });
 
 export default Home;
+
+
+{
+  /* <View style={homescreenStyles.hmBtnGrp}>
+            <AppButton
+              style={{
+                flexBasis: 200,
+                backgroundColor: '#F2AB1D',
+              }}
+              textStyle={{color: 'white', fontSize: 18}}
+              title="Start Scan"
+              rounded
+              onPress={handleScan || null}
+            />
+            <Icon.Button
+              name="camera-rear"
+              size={25}
+              backgroundColor="#37BCDF"
+              color="white"
+              // onPress={handleFlip}
+              >
+              Flip
+            </Icon.Button>
+            <Text style={homescreenStyles.bottomText}>
+              Click on start to begin the process
+            </Text>
+          </View> */
+}

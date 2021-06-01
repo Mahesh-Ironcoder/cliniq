@@ -50,9 +50,10 @@ const reducer = (prevState, action) => {
 };
 
 const VitalsCardContainer = (props) => {
-  const [loading, setLoading] = React.useState(true);
+  const [loading, setLoading] = React.useState(0);
   const [vitals, setVitals] = React.useState(idata);
-  const [imgUri, setImgUri] = React.useState('');
+  // const [imgUri, setImgUri] = React.useState('');
+  const [progress, setProgress] = React.useState(0);
 
   const screen = useWindowDimensions();
   const drawerAnim = React.useState(new Animated.Value(0))[0];
@@ -133,7 +134,7 @@ const VitalsCardContainer = (props) => {
     } else {
       RNFS.readFile(filepath, 'base64')
         .then((photoFrame) => {
-          setImgUri('data:image/png;base64,' + photoFrame);
+          // setImgUri('data:image/png;base64,' + photoFrame);
           const rawData = JSON.stringify({
             id: 4,
             name: 'something',
@@ -147,6 +148,7 @@ const VitalsCardContainer = (props) => {
             headers: headers,
             body: rawData,
           };
+          console.log('Send frame got the image');
           return fetch(
             'http://15.207.11.162:8500/data/uploadPhoto',
             requestOptions,
@@ -175,11 +177,10 @@ const VitalsCardContainer = (props) => {
     }
   };
 
-  /* 
   React.useEffect(() => {
     const onConvert = (obj) => {
       console.log(obj.msg);
-      // sendFrame('photo', 0);
+      sendFrame('photo', 0);
     };
 
     const onError = (msg) => {
@@ -189,18 +190,24 @@ const VitalsCardContainer = (props) => {
     const eventEmitter = new NativeEventEmitter(NativeModules.RNJavaCVLib);
     const eventListener = eventEmitter.addListener('frameEvent', (event) => {
       // try {
+
       if (event.lastReq) {
         sendFrame('photo', 0);
       } else {
+        let prog = parseInt((event.currFrame / 240) * 100);
+        console.log('Progress: ', prog);
+        setProgress(prog);
         sendFrame(event.uriPath);
       }
+
       // sendFrame(event.uriPath);
     });
-
+    setLoading(1);
     props
       .pictureData()
       .then((video) => {
         console.log('Video rec completed and sending for frame extraction...');
+        setLoading(2);
         JavaCV.getFramesFromVideo(video.uri, onError, onConvert);
       })
       .catch((e) => {
@@ -212,78 +219,28 @@ const VitalsCardContainer = (props) => {
       eventListener.remove();
     };
   }, []);
- */
-
-  React.useEffect(() => {
-    // const {cam} = props;
-    const onComplete = (obj) => {
-      console.log(obj);
-      // sendFrame('photo', 0);
-      // cam.resumePreview();
-    };
-
-    const onError = (msg) => {
-      console.log(msg);
-    };
-
-    try {
-      // cam.pausePreview();
-      JavaCV.getRealTimeFrame('0', onError, onComplete);
-    } catch (e) {
-      console.log('@VitalsCardContainer - Error in getting the frame data', e);
-    }
-
-    const eventEmitter = new NativeEventEmitter(NativeModules.RNJavaCVLib);
-    const eventListener = eventEmitter.addListener('frameEvent', (event) => {
-      // try {
-      if (event.lastReq) {
-        sendFrame('photo', 0);
-      } else {
-        sendFrame(event.uriPath);
-      }
-      // sendFrame(event.uriPath);
-    });
-
-    return () => {
-      console.log('Component is destroyed...Removing the event listener');
-      eventListener.remove();
-    };
-  }, []);
-
-  // React.useEffect(() => {
-  //   const {cam} = props;
-  //   cam.pausePreview();
-  //   let id = setTimeout(() => {
-  //     cam.resumePreview();
-  //     clearTimeout(id);
-  //   }, 3000);
-  // }, []);
 
   return (
     <>
-      {imgUri ? (
-        <Image
-          source={{
-            uri: 'data:image/jpeg;base64,' + imgUri,
-            height: 100,
-            width: 100,
-          }}
-          style={styles.frame}
-        />
-      ) : null}
       <View style={styles.container}>
-        {loading && (
-          <ProgressBar
-            style={styles.progressbar}
-            width={null}
-            height={21}
-            borderRadius={15}
-            color="rgba(55, 188, 223, 1)"
-            unfilledColor="rgba(250, 250, 250, 0.3)"
-            borderColor="transparent"
-          />
-        )}
-        <Vitals data={vitals} />
+        {loading ? (
+          <>
+            <ProgressBar
+              style={styles.progressbar}
+              width={null}
+              height={21}
+              borderRadius={15}
+              color="rgba(55, 188, 223, 1)"
+              unfilledColor="rgba(250, 250, 250, 0.3)"
+              borderColor="transparent"
+              indeterminate={loading === 1 ? true : false}
+              text={loading === 1 ? 'Recording...' : 'Extracting Frames...'}
+              progress={progress}
+            />
+            {loading == 2 ? <Vitals data={vitals} /> : null}
+          </>
+        ) : null}
+
         <Icon
           name="expand-less"
           size={30}
@@ -334,6 +291,7 @@ export default VitalsCardContainer;
 
 const styles = StyleSheet.create({
   container: {
+    width: '100%',
     justifyContent: 'flex-end',
     position: 'absolute',
     bottom: 1,
@@ -444,3 +402,50 @@ const styles = StyleSheet.create({
       console.error('Error getting all frames at once: ', e);
     }
   }; */
+
+/* {imgUri ? (
+        <Image
+          source={{
+            uri: 'data:image/jpeg;base64,' + imgUri,
+            height: 100,
+            width: 100,
+          }}
+          style={styles.frame}
+        />
+      ) : null} */
+
+/* React.useEffect(() => {
+    // const {cam} = props;
+    const onComplete = (obj) => {
+      console.log(obj);
+      // sendFrame('photo', 0);
+      // cam.resumePreview();
+    };
+
+    const onError = (msg) => {
+      console.log(msg);
+    };
+
+    try {
+      // cam.pausePreview();
+      JavaCV.getRealTimeFrame('0', onError, onComplete);
+    } catch (e) {
+      console.log('@VitalsCardContainer - Error in getting the frame data', e);
+    }
+
+    const eventEmitter = new NativeEventEmitter(NativeModules.RNJavaCVLib);
+    const eventListener = eventEmitter.addListener('frameEvent', (event) => {
+      // try {
+      if (event.lastReq) {
+        sendFrame('photo', 0);
+      } else {
+        sendFrame(event.uriPath);
+      }
+      // sendFrame(event.uriPath);
+    });
+
+    return () => {
+      console.log('Component is destroyed...Removing the event listener');
+      eventListener.remove();
+    };
+  }, []); */

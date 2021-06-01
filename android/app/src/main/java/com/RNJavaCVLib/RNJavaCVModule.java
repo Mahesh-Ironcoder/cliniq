@@ -9,33 +9,27 @@ import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
-import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.hardware.Camera;
-import android.hardware.Camera.CameraInfo;
-import android.media.Image;
-import android.os.Environment;
+import android.os.AsyncTask;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.WorkerThread;
 
-//import org.bytedeco.javacv.AndroidFrameConverter;
-//import org.bytedeco.javacv.FFmpegFrameGrabber;
-//import org.bytedeco.javacv.Frame;
-//import org.bytedeco.javacv.FrameGrabber;
-//import org.bytedeco.javacv.OpenCVFrameConverter;
-//import org.bytedeco.javacv.VideoInputFrameGrabber;
-//import org.bytedeco.opencv.opencv_core.Mat;
-//import org.bytedeco.opencv.opencv_core.Point2f;
-//import static org.bytedeco.opencv.global.opencv_imgproc.*;
+import org.bytedeco.javacv.AndroidFrameConverter;
+import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.Frame;
+import org.bytedeco.javacv.FrameGrabber;
+import org.bytedeco.javacv.OpenCVFrameConverter;
+import org.bytedeco.javacv.VideoInputFrameGrabber;
+import org.bytedeco.opencv.opencv_core.Mat;
+import org.bytedeco.opencv.opencv_core.Point2f;
+import static org.bytedeco.opencv.global.opencv_imgproc.*;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.Map;
 
 
 //import com.otaliastudios.cameraview.CameraView;
@@ -47,15 +41,14 @@ import java.nio.ByteBuffer;
 public class RNJavaCVModule extends ReactContextBaseJavaModule {
     private final ReactApplicationContext reactContext;
     public final static String LOG_TAG = "RNJavaCV";
-//    private final OpenCVFrameConverter.ToMat convertToMat;
-//    private CameraView mCamera;
-
+    private final OpenCVFrameConverter.ToMat convertToMat;
+    private Callback mSuccessCallback;
+    private Callback mErrorCallback;
     public RNJavaCVModule(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
-//        convertToMat = new OpenCVFrameConverter.ToMat();
-//        mCamera = new CameraView(reactContext);
-//        cameraId = findFrontFacingCamera();
+        convertToMat = new OpenCVFrameConverter.ToMat();
+
     }
 
     @Override
@@ -74,13 +67,13 @@ public class RNJavaCVModule extends ReactContextBaseJavaModule {
             AppCamera camera= new AppCamera(reactContext);
 //            camera.openCamera();
             int i=1;
-            File pDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-            File appPhotos = new File(pDir,"CliniQ");
+            File pDir = reactContext.getFilesDir();
+            File appPhotos = new File(pDir,"Camera");
             String fileName;
             String filePath;
             boolean s = appPhotos.mkdir();
 
-            while(i<300){
+            while(i<150){
                 fileName = String.format("photo%d.jpeg",i);
                 filePath = new File(appPhotos, fileName).getAbsolutePath();
                 camera.takePicture(new File(appPhotos, fileName).getAbsolutePath());
@@ -100,6 +93,179 @@ public class RNJavaCVModule extends ReactContextBaseJavaModule {
 
     }
 
+
+    @ReactMethod
+    public void getFramesFromVideo(String fileName, Callback errorCallback, Callback successCallback) {
+        mSuccessCallback = successCallback;
+        mErrorCallback = errorCallback;
+        FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(fileName);
+       /* try {
+            Frame frame;
+            String ofn;
+            int i = 1;
+
+            String framesDirectory;
+            grabber.start();
+
+            while ((frame = grabber.grabImage()) != null) {
+                ofn = String.format("frame%03d.png", i);
+                frame = rotateFrame(frame, 90);
+                framesDirectory = createImageFile(frame, ofn);
+                WritableMap eventParams = Arguments.createMap();
+                eventParams.putString("uriPath", framesDirectory + "/" + ofn);
+                eventParams.putBoolean("lastReq", false);
+                eventParams.putInt("currFrame",i);
+                sendExtEvent(reactContext, "frameEvent", eventParams);
+                i++;
+//                if(i>120)
+//                Thread.sleep(10000);
+            }
+
+            WritableMap completeParams = Arguments.createMap();
+            completeParams.putBoolean("lastReq", true);
+            sendExtEvent(reactContext, "frameEvent", completeParams);
+
+            ShowFiles(LOG_TAG);
+            StopConverting(grabber);
+            successCallback.invoke("Completed extraction");
+        } catch (FrameGrabber.Exception e) {
+            String errMsg = "Error in frame grabs: " + e.getMessage();
+            Log.d(LOG_TAG, errMsg);
+            errorCallback.invoke(errMsg);
+        } catch (IOException e) {
+            String errMsg = "Error in file creations: " + e.getMessage();
+            Log.d(LOG_TAG, errMsg);
+            errorCallback.invoke(errMsg);
+        } catch (Exception e) {
+            Log.d(LOG_TAG, "Error in extracting: " + e.getMessage());
+            errorCallback.invoke("Error in extracting: " + e.getMessage());
+        }*/
+        try{
+            ExtractFrameTask task = new ExtractFrameTask();
+            task.execute(grabber);
+        }catch(Exception e){
+            Log.d(LOG_TAG, "Error in asyncTask"+e.getMessage(), e.fillInStackTrace());
+            mErrorCallback.invoke("Error in asyncTask"+e.getMessage());
+        }
+
+    }
+
+    private Frame rotateFrame(Frame frame, double angle) {
+//        OpenCVFrameConverter.ToMat convertToMat = new OpenCVFrameConverter.ToMat();
+        Mat matImage = convertToMat.convert(frame);
+        Point2f centerPoint = new Point2f(matImage.cols() / 2.0f, matImage.rows() / 2.0f);
+        Mat rot_mat = getRotationMatrix2D(centerPoint, angle, 1);
+        warpAffine(matImage, matImage, rot_mat, matImage.size());
+        return convertToMat.convert(matImage);
+    }
+
+    private String createImageFile(Frame frame, String filename) throws IOException {
+        AndroidFrameConverter converter = new AndroidFrameConverter();
+        Bitmap imgBitmap;
+        File framesDir = createAndGetDir("frames");
+        File framesFile = new File(framesDir, filename);
+        FileOutputStream fos = new FileOutputStream(framesFile);
+        imgBitmap = converter.convert(frame);
+        imgBitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
+        fos.flush();
+        fos.close();
+        return framesDir.getAbsolutePath();
+    }
+
+    private File createAndGetDir(String directoryName) throws IOException {
+        File directory = new File(reactContext.getFilesDir(), directoryName);
+        boolean success = directory.mkdir();
+        // if(!success) throw new IOException("Not able to create frames directory");
+        return directory;
+    }
+
+    private void ShowFiles(String tag) throws Exception {
+        File fd = new File(reactContext.getFilesDir(), "frames");
+        File[] filesList = fd.listFiles();
+        assert filesList != null;
+        if (filesList.length <= 0) {
+            throw new Exception("No files in the Dir frames. ");
+        }
+        for (File f : filesList) {
+            Log.d(tag, "Files in filesDir: " + f.getName());
+        }
+    }
+
+    private void StopConverting(FFmpegFrameGrabber grabber) {
+        try {
+            grabber.stop();
+            grabber.release();
+        } catch (FrameGrabber.Exception e) {
+            throw new RuntimeException("Could not stop or release the resources: " + e.getMessage());
+        }
+    }
+
+
+    private class ExtractFrameTask extends AsyncTask<FFmpegFrameGrabber, String, WritableMap>
+    {
+
+        @Override
+        protected WritableMap doInBackground(FFmpegFrameGrabber... fFmpegFrameGrabbers) {
+            Frame frame;
+            String ofn;
+            int i = 1;
+            FFmpegFrameGrabber grabber = fFmpegFrameGrabbers[0];
+            String framesDirectory;
+            try{
+                grabber.start();
+                while ((frame = grabber.grabImage()) != null) {
+                    ofn = String.format("frame%03d.png", i);
+                    frame = rotateFrame(frame, 90);
+                    framesDirectory = createImageFile(frame, ofn);
+                    publishProgress(framesDirectory + "/" + ofn, String.valueOf(i),String.valueOf(false));
+                    i++;
+
+                }
+            } catch (FrameGrabber.Exception e) {
+                String errMsg = "Error in frame grabs: " + e.getMessage();
+                Log.d(LOG_TAG, errMsg);
+                cancel(true);
+                mErrorCallback.invoke(errMsg);
+            } catch (IOException e) {
+                String errMsg = "Error in file creations: " + e.getMessage();
+                Log.d(LOG_TAG, errMsg);
+                cancel(true);
+                mErrorCallback.invoke(errMsg);
+            } catch (Exception e) {
+                Log.d(LOG_TAG, "Error in extracting: " + e.getMessage());
+                cancel(true);
+                mErrorCallback.invoke("Error in extracting: " + e.getMessage());
+            }
+            WritableMap completeParams = Arguments.createMap();
+            completeParams.putString("msg", "Completed Task of extracting frames");
+            completeParams.putBoolean("lastReq", true);
+
+            return completeParams;
+        }
+
+        @Override
+        protected void onProgressUpdate(String... progress){
+            String filePath = progress[0];
+            String frameNo = progress[1];
+            String lastReq = progress[2];
+
+            WritableMap eventParams = Arguments.createMap();
+            eventParams.putString("uriPath", filePath);
+            eventParams.putBoolean("lastReq", Boolean.parseBoolean(lastReq));
+            eventParams.putInt("currFrame", Integer.parseInt(frameNo));
+            sendExtEvent(reactContext, "frameEvent", eventParams);
+//            try {
+//                Thread.sleep(1000);
+//            } catch (InterruptedException e) {
+//                Log.d(LOG_TAG, "Error with sleep thread: "+e.getMessage(),e.fillInStackTrace());
+//            }
+        }
+
+        @Override
+        protected  void onPostExecute(WritableMap result){
+            mSuccessCallback.invoke(result);
+        }
+    }
     /*private void ShowFiles(String dirPath) throws Exception {
         if(dirPath.isEmpty()){
             Log.d(LOG_TAG, "NO path file ");
@@ -114,22 +280,6 @@ public class RNJavaCVModule extends ReactContextBaseJavaModule {
         for (File f : filesList) {
             Log.d(LOG_TAG, "Files in filesDir: " + f.getName());
         }
-    }
-
-    private int findFrontFacingCamera() {
-        int cameraId = -1;
-        // Search for the front facing camera
-        int numberOfCameras = Camera.getNumberOfCameras();
-        for (int i = 0; i < numberOfCameras; i++) {
-            CameraInfo info = new CameraInfo();
-            Camera.getCameraInfo(i, info);
-            if (info.facing == CameraInfo.CAMERA_FACING_FRONT) {
-                Log.d(LOG_TAG, "Camera found");
-                cameraId = i;
-                break;
-            }
-        }
-        return cameraId;
     }*/
 
 }
