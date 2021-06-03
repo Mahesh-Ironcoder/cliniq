@@ -54,6 +54,7 @@ const CustomCamera = React.forwardRef((props, ref) => {
         type={type}
         style={cameraStyles.cam}
         whiteBalance={RNCamera.Constants.WhiteBalance.auto}
+        captureAudio={false}
         onFacesDetected={handleDetections}
         faceDetectorSettings={{
           mode: FaceDetector.Constants.Mode.fast,

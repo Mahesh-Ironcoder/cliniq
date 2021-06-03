@@ -1,12 +1,9 @@
-import React from 'react';
+import React, {useContext} from 'react';
 import {
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
   Animated,
-  Pressable,
-  Image,
   NativeEventEmitter,
   NativeModules,
 } from 'react-native';
@@ -16,9 +13,10 @@ import FullVitals from './FullVitals';
 import ProgressBar from './ProgressBar';
 import Vitals from './Vitals';
 
-import * as RNFS from 'react-native-fs';
+import {readFile} from 'react-native-fs';
 
 import JavaCV from '../src/nativeModules/JavaCV';
+import {AppContext} from '../contexts/AuthContext';
 
 const data = {
   'Blood Pressure': [
@@ -30,7 +28,7 @@ const data = {
   SpO2: '90%',
   Temperature3: '80F',
 };
-const idata = {
+let idata = {
   'Blood Pressure': null,
   Temperature1: null,
   Temperature2: null,
@@ -38,27 +36,13 @@ const idata = {
   Temperature3: null,
 };
 
-const reducer = (prevState, action) => {
-  switch (action.type) {
-    case 'set':
-      return {loading: false, vitals: {...action.payload}};
-    case 'reset':
-      return {loading: true, vitals: idata};
-    default:
-      return prevState;
-  }
-};
-
 const VitalsCardContainer = (props) => {
-  const [loading, setLoading] = React.useState(0);
+  const [loading, setLoading] = React.useState(true);
   const [vitals, setVitals] = React.useState(idata);
-  // const [imgUri, setImgUri] = React.useState('');
-  const [progress, setProgress] = React.useState(0);
 
+  const {appAuth} = useContext(AppContext);
   const screen = useWindowDimensions();
   const drawerAnim = React.useState(new Animated.Value(0))[0];
-  console.log('Vitals: ', vitals);
-
   const slideUP = () => {
     Animated.timing(drawerAnim, {
       toValue: 1,
@@ -76,7 +60,7 @@ const VitalsCardContainer = (props) => {
   };
 
   const updateVitals = (respText) => {
-    console.log('Response text', respText);
+    // console.log('Response text', respText);
     let data = {};
     data['Blood Pressure'] = [
       {title: 'Systolic', value: respText[3].value},
@@ -87,7 +71,7 @@ const VitalsCardContainer = (props) => {
     data['Respiration'] = respText[2].value + respText[2].prefix;
     data['Temperature'] = respText[5].value + respText[5].prefix;
     // data['Saturation'] = respText[0].value + respText[0].prefix;
-    console.log('Vitals data updating are: ', data);
+    // console.log('Vitals data updating are: ', data);
     setVitals(data);
   };
 
@@ -98,8 +82,8 @@ const VitalsCardContainer = (props) => {
 
     if (filepath == 'photo') {
       const rawData = JSON.stringify({
-        id: 4,
-        name: 'something',
+        id: appAuth.currentUser.uid,
+        name: appAuth.currentUser.displayName,
         pms: 'uk',
         status: status,
         photo: 'photo',
@@ -122,9 +106,12 @@ const VitalsCardContainer = (props) => {
           console.log(
             `The response with result ${body[8].value} and frame no ${body[7].value}`,
           );
-          if (body[8].value) {
-            updateVitals(body);
-          }
+          // if (body[8].value) {
+          //   if (body[7].value > 200) {
+          //     slideUP();
+          //   }
+          //   updateVitals(body);
+          // }
         })
         .catch((e) => {
           console.log(
@@ -132,12 +119,11 @@ const VitalsCardContainer = (props) => {
           );
         });
     } else {
-      RNFS.readFile(filepath, 'base64')
+      readFile(filepath, 'base64')
         .then((photoFrame) => {
-          // setImgUri('data:image/png;base64,' + photoFrame);
           const rawData = JSON.stringify({
-            id: 4,
-            name: 'something',
+            id: appAuth.currentUser.uid,
+            name: appAuth.currentUser.displayName,
             pms: 'uk',
             status: status,
             photo: photoFrame,
@@ -166,6 +152,14 @@ const VitalsCardContainer = (props) => {
             `The response with result ${body[8].value} and frame no ${body[7].value}`,
           );
           if (body[8].value) {
+            if (body[7].value > 200) {
+              // if (updateImg) {
+              //   console.error('Setting photoframe');
+              //   setImgUri(photoFrame);
+              //   setUpdateImg(false);
+              // }
+              slideUP();
+            }
             updateVitals(body);
           }
         })
@@ -178,6 +172,7 @@ const VitalsCardContainer = (props) => {
   };
 
   React.useEffect(() => {
+    let socket = new WebSocket('wss://www.example.com/socketserver');
     const onConvert = (obj) => {
       console.log(obj.msg);
       sendFrame('photo', 0);
@@ -189,25 +184,18 @@ const VitalsCardContainer = (props) => {
 
     const eventEmitter = new NativeEventEmitter(NativeModules.RNJavaCVLib);
     const eventListener = eventEmitter.addListener('frameEvent', (event) => {
-      // try {
-
-      if (event.lastReq) {
-        sendFrame('photo', 0);
-      } else {
-        let prog = parseInt((event.currFrame / 240) * 100);
-        console.log('Progress: ', prog);
-        setProgress(prog);
-        sendFrame(event.uriPath);
-      }
-
-      // sendFrame(event.uriPath);
+      // if (event.lastReq) {
+      //   sendFrame('photo', 0);
+      // } else {
+      //   sendFrame(event.uriPath);
+      // }
+      console.log('Result is: ', event.result);
     });
-    setLoading(1);
     props
       .pictureData()
       .then((video) => {
         console.log('Video rec completed and sending for frame extraction...');
-        setLoading(2);
+        setLoading(false);
         JavaCV.getFramesFromVideo(video.uri, onError, onConvert);
       })
       .catch((e) => {
@@ -216,6 +204,7 @@ const VitalsCardContainer = (props) => {
 
     return () => {
       console.log('Component is destroyed...Removing the event listener');
+      sendFrame('photo', 0);
       eventListener.remove();
     };
   }, []);
@@ -224,6 +213,17 @@ const VitalsCardContainer = (props) => {
     <>
       <View style={styles.container}>
         {loading ? (
+          <ProgressBar
+            style={styles.progressbar}
+            width={null}
+            height={21}
+            borderRadius={15}
+            color="rgba(55, 188, 223, 1)"
+            unfilledColor="rgba(250, 250, 250, 0.3)"
+            borderColor="transparent"
+            text="Detecting..."
+          />
+        ) : (
           <>
             <ProgressBar
               style={styles.progressbar}
@@ -233,21 +233,18 @@ const VitalsCardContainer = (props) => {
               color="rgba(55, 188, 223, 1)"
               unfilledColor="rgba(250, 250, 250, 0.3)"
               borderColor="transparent"
-              indeterminate={loading === 1 ? true : false}
-              text={loading === 1 ? 'Recording...' : 'Extracting Frames...'}
-              progress={progress}
+              text="Loading Results"
             />
-            {loading == 2 ? <Vitals data={vitals} /> : null}
+            <Vitals data={vitals} />
+            <Icon
+              name="expand-less"
+              size={30}
+              color="#fff"
+              style={styles.drawer}
+              onPress={slideUP}
+            />
           </>
-        ) : null}
-
-        <Icon
-          name="expand-less"
-          size={30}
-          color="#fff"
-          style={styles.drawer}
-          onPress={slideUP}
-        />
+        )}
       </View>
       <Animated.View
         style={[

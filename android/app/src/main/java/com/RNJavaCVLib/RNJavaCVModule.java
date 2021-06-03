@@ -11,6 +11,8 @@ import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
+import android.os.SystemClock;
+import android.util.Base64;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -20,16 +22,25 @@ import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
 import org.bytedeco.javacv.OpenCVFrameConverter;
-import org.bytedeco.javacv.VideoInputFrameGrabber;
 import org.bytedeco.opencv.opencv_core.Mat;
 import org.bytedeco.opencv.opencv_core.Point2f;
 import static org.bytedeco.opencv.global.opencv_imgproc.*;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.SplittableRandom;
+
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okio.BufferedSink;
 
 
 //import com.otaliastudios.cameraview.CameraView;
@@ -44,11 +55,12 @@ public class RNJavaCVModule extends ReactContextBaseJavaModule {
     private final OpenCVFrameConverter.ToMat convertToMat;
     private Callback mSuccessCallback;
     private Callback mErrorCallback;
+    private OkHttpClient httpClient;
     public RNJavaCVModule(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
         convertToMat = new OpenCVFrameConverter.ToMat();
-
+        httpClient = new OkHttpClient();
     }
 
     @Override
@@ -59,6 +71,7 @@ public class RNJavaCVModule extends ReactContextBaseJavaModule {
     private void sendExtEvent(ReactContext reactContext, String eventName, @Nullable WritableMap params) {
         reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class).emit(eventName, params);
     }
+
 
     @ReactMethod
     public void getRealTimeFrame(String camIndex, Callback errorCallback, Callback successCallback){
@@ -99,47 +112,6 @@ public class RNJavaCVModule extends ReactContextBaseJavaModule {
         mSuccessCallback = successCallback;
         mErrorCallback = errorCallback;
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(fileName);
-       /* try {
-            Frame frame;
-            String ofn;
-            int i = 1;
-
-            String framesDirectory;
-            grabber.start();
-
-            while ((frame = grabber.grabImage()) != null) {
-                ofn = String.format("frame%03d.png", i);
-                frame = rotateFrame(frame, 90);
-                framesDirectory = createImageFile(frame, ofn);
-                WritableMap eventParams = Arguments.createMap();
-                eventParams.putString("uriPath", framesDirectory + "/" + ofn);
-                eventParams.putBoolean("lastReq", false);
-                eventParams.putInt("currFrame",i);
-                sendExtEvent(reactContext, "frameEvent", eventParams);
-                i++;
-//                if(i>120)
-//                Thread.sleep(10000);
-            }
-
-            WritableMap completeParams = Arguments.createMap();
-            completeParams.putBoolean("lastReq", true);
-            sendExtEvent(reactContext, "frameEvent", completeParams);
-
-            ShowFiles(LOG_TAG);
-            StopConverting(grabber);
-            successCallback.invoke("Completed extraction");
-        } catch (FrameGrabber.Exception e) {
-            String errMsg = "Error in frame grabs: " + e.getMessage();
-            Log.d(LOG_TAG, errMsg);
-            errorCallback.invoke(errMsg);
-        } catch (IOException e) {
-            String errMsg = "Error in file creations: " + e.getMessage();
-            Log.d(LOG_TAG, errMsg);
-            errorCallback.invoke(errMsg);
-        } catch (Exception e) {
-            Log.d(LOG_TAG, "Error in extracting: " + e.getMessage());
-            errorCallback.invoke("Error in extracting: " + e.getMessage());
-        }*/
         try{
             ExtractFrameTask task = new ExtractFrameTask();
             task.execute(grabber);
@@ -148,6 +120,14 @@ public class RNJavaCVModule extends ReactContextBaseJavaModule {
             mErrorCallback.invoke("Error in asyncTask"+e.getMessage());
         }
 
+    }
+
+    private String sendPostRequest(String url, String body) throws IOException {
+        RequestBody requestBody = RequestBody.create(MediaType.parse("application/json; charset=utf-8"),body);
+        Request postReq = new Request.Builder().url(url).addHeader("Content-Type", "application/json").post(requestBody).build();
+        Response postResp = httpClient.newCall(postReq).execute();
+        assert postResp.body() != null;
+        return postResp.body().string();
     }
 
     private Frame rotateFrame(Frame frame, double angle) {
@@ -169,6 +149,7 @@ public class RNJavaCVModule extends ReactContextBaseJavaModule {
         imgBitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
         fos.flush();
         fos.close();
+//        imgBitmap.
         return framesDir.getAbsolutePath();
     }
 
@@ -200,6 +181,23 @@ public class RNJavaCVModule extends ReactContextBaseJavaModule {
         }
     }
 
+    private String convertFrameToBase64(Frame frame){
+        AndroidFrameConverter converter = new AndroidFrameConverter();
+        Bitmap frameBitmap = converter.convert(frame);
+        ByteArrayOutputStream frameByte = new ByteArrayOutputStream();
+        frameBitmap.compress(Bitmap.CompressFormat.PNG,99,frameByte);
+        return Base64.encodeToString(frameByte.toByteArray(),Base64.DEFAULT);
+    }
+
+    private String bodyJson(int status, String photoFrame){
+        return  "{" +
+                "'name': 'something'," +
+                "'id': '4'," +
+                "'pms': 'uk'," +
+                "'status': " + status +","+
+                "photo" +photoFrame+","+
+                "}" ;
+    }
 
     private class ExtractFrameTask extends AsyncTask<FFmpegFrameGrabber, String, WritableMap>
     {
@@ -211,13 +209,25 @@ public class RNJavaCVModule extends ReactContextBaseJavaModule {
             int i = 1;
             FFmpegFrameGrabber grabber = fFmpegFrameGrabbers[0];
             String framesDirectory;
+            String URL = "http://15.207.11.162:8500/data/uploadPhoto";
+            String result;
+            long start, stop;
+            long frameTime, reqTime;
             try{
                 grabber.start();
+                start = System.currentTimeMillis();
                 while ((frame = grabber.grabImage()) != null) {
                     ofn = String.format("frame%03d.png", i);
                     frame = rotateFrame(frame, 90);
-                    framesDirectory = createImageFile(frame, ofn);
-                    publishProgress(framesDirectory + "/" + ofn, String.valueOf(i),String.valueOf(false));
+                    stop = System.currentTimeMillis();
+                    frameTime = (stop-start);
+                    start = System.currentTimeMillis();
+                    result = sendPostRequest(URL, bodyJson(1, convertFrameToBase64(frame)));
+                    stop = System.currentTimeMillis();
+                    reqTime = (stop-start);
+//                    framesDirectory = createImageFile(frame, ofn);
+//                    publishProgress(framesDirectory + "/" + ofn, String.valueOf(i),String.valueOf(false));
+                    publishProgress("frame time: "+frameTime+"Request Time: "+reqTime+result);
                     i++;
 
                 }
@@ -225,16 +235,26 @@ public class RNJavaCVModule extends ReactContextBaseJavaModule {
                 String errMsg = "Error in frame grabs: " + e.getMessage();
                 Log.d(LOG_TAG, errMsg);
                 cancel(true);
-                mErrorCallback.invoke(errMsg);
+                if(mErrorCallback!=null){
+                    mErrorCallback.invoke(errMsg);
+                    mErrorCallback = null;
+                }
             } catch (IOException e) {
                 String errMsg = "Error in file creations: " + e.getMessage();
                 Log.d(LOG_TAG, errMsg);
                 cancel(true);
-                mErrorCallback.invoke(errMsg);
+                if(mErrorCallback!=null){
+                    mErrorCallback.invoke(errMsg);
+                    mErrorCallback = null;
+                }
             } catch (Exception e) {
-                Log.d(LOG_TAG, "Error in extracting: " + e.getMessage());
+                String errMsg = "Error in extracting: " + e.getMessage();
+                Log.d(LOG_TAG, errMsg);
                 cancel(true);
-                mErrorCallback.invoke("Error in extracting: " + e.getMessage());
+                if(mErrorCallback!=null){
+                    mErrorCallback.invoke(errMsg);
+                    mErrorCallback = null;
+                }
             }
             WritableMap completeParams = Arguments.createMap();
             completeParams.putString("msg", "Completed Task of extracting frames");
@@ -245,25 +265,24 @@ public class RNJavaCVModule extends ReactContextBaseJavaModule {
 
         @Override
         protected void onProgressUpdate(String... progress){
-            String filePath = progress[0];
-            String frameNo = progress[1];
-            String lastReq = progress[2];
-
+//            String filePath = progress[0];
+//            String frameNo = progress[1];
+//            String lastReq = progress[2];
+//
             WritableMap eventParams = Arguments.createMap();
-            eventParams.putString("uriPath", filePath);
-            eventParams.putBoolean("lastReq", Boolean.parseBoolean(lastReq));
-            eventParams.putInt("currFrame", Integer.parseInt(frameNo));
+//            eventParams.putString("uriPath", filePath);
+//            eventParams.putBoolean("lastReq", Boolean.parseBoolean(lastReq));
+//            eventParams.putInt("currFrame", Integer.parseInt(frameNo));
+            eventParams.putString("result", progress[0]);
             sendExtEvent(reactContext, "frameEvent", eventParams);
-//            try {
-//                Thread.sleep(1000);
-//            } catch (InterruptedException e) {
-//                Log.d(LOG_TAG, "Error with sleep thread: "+e.getMessage(),e.fillInStackTrace());
-//            }
         }
 
         @Override
         protected  void onPostExecute(WritableMap result){
-            mSuccessCallback.invoke(result);
+            if(mSuccessCallback!=null){
+                mSuccessCallback.invoke(result);
+                mSuccessCallback = null;
+            }
         }
     }
     /*private void ShowFiles(String dirPath) throws Exception {

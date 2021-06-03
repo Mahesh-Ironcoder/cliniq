@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, Text, StyleSheet} from 'react-native';
+import { Text, StyleSheet} from 'react-native';
 import {Bar} from 'react-native-progress';
 
 const ProgressBar = React.forwardRef((props, ref) => {

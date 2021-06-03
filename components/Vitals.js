@@ -4,6 +4,11 @@ import CardVitals from './CardVitals';
 
 const Vitals = (props) => {
   const {data} = props;
+  // const [data, setData] = React.useState(props.data);
+
+  // React.useEffect(() => {
+  //   setData(props.data);
+  // }, [props.data]);
 
   return (
     <View style={styles.cardContainer}>
