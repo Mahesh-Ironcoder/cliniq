@@ -7,19 +7,153 @@ import ResetPassword from './components/ResetPassword';
 
 import {createStackNavigator} from '@react-navigation/stack';
 
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 
 import AuthContextProvider from './contexts/AuthContext';
+
+import {BackHandler, Alert} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import ReactNativeBiometrics from 'react-native-biometrics';
 //--------------------------Done with imports------------------------------------------------------
 
 const Stack = createStackNavigator();
 
 function App() {
-  // const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState('');
 
+  function updateUserBiometric(userId, bioAuth, ask) {
+    console.log('got update params with userId: ', userId, bioAuth, ask);
+    let value = {
+      bioAuth: {
+        enabled: bioAuth,
+        authenticated: false,
+        askNextTime: ask,
+      },
+    };
+    AsyncStorage.mergeItem(userId, JSON.stringify(value)).catch((e) => {
+      console.log('Error', e);
+    });
+  }
+
+  function addUserBiometric(userId, bioAuth, ask) {
+    console.log('got params with userId: ', userId, bioAuth, ask);
+    let value = {
+      bioAuth: {
+        enabled: bioAuth,
+        authenticated: false,
+        askNextTime: ask,
+      },
+    };
+    AsyncStorage.setItem(JSON.stringify(userId), JSON.stringify(value)).catch(
+      (e) => {
+        console.log('Error', e);
+      },
+    );
+  }
+
+  async function verifyUserBiometric(userId) {
+    async function authenticateUser(prevData) {
+      try {
+        let authRes = await ReactNativeBiometrics.simplePrompt({
+          promptMessage: 'Using your device authentication...',
+          cancelButtonText: 'Cancel',
+        });
+
+        const {success} = authRes;
+        if (success) {
+          console.log('successful biometrics provided');
+          AsyncStorage.setItem(
+            userId,
+            JSON.stringify({
+              ...prevData,
+              bioAuth: {...prevData.bioAuth, authenticated: true},
+            }),
+          ).catch((e) => {
+            console.log('Error in updating the persistent data', e);
+          });
+        } else {
+          console.log('user cancelled biometric prompt');
+          BackHandler.exitApp();
+        }
+      } catch (e) {
+        console.log('Error showing biometrics', e);
+      }
+    }
+
+    let authPersistent;
+    try {
+      authPersistent = await AsyncStorage.getItem(userId);
+      if (!authPersistent) {
+        return;
+      }
+      authPersistent = await JSON.parse(authPersistent);
+      const {
+        bioAuth: {enabled, askNextTime},
+      } = authPersistent;
+
+      // console.log('Auth persist init: ', authPersistent);
+
+      if (enabled) {
+        await authenticateUser(authPersistent);
+      } else if (askNextTime) {
+        showSecurityAlert(userId, false);
+      }
+    } catch (e) {
+      console.log('Error in biometric authentication', e);
+      BackHandler.exitApp();
+    }
+  }
+
+  function showSecurityAlert(userId, add) {
+    Alert.alert(
+      'Extra Security-init',
+      "Add extra layer of security by using device's biometrics",
+      [
+        {
+          text: 'Ok',
+          onPress: () => {
+            if (add) {
+              addUserBiometric(userId, true, false);
+            }
+            updateUserBiometric(userId, true, false);
+          },
+        },
+        {
+          text: 'Cancel',
+          onPress: () => {
+            if (add) {
+              addUserBiometric(userId, false, true);
+            }
+            updateUserBiometric(userId, false, true);
+          },
+          style: 'cancel',
+        },
+        {
+          text: 'No & Dont ask again',
+          onPress: () => {
+            if (add) {
+              addUserBiometric(userId, false, false);
+            }
+            updateUserBiometric(userId, false, false);
+          },
+        },
+      ],
+    );
+  }
+
+  useEffect(() => {
+    if (user) {
+      console.log('User: ', user);
+      verifyUserBiometric(JSON.stringify(user.uid));
+    }
+  }, [user]);
+
   return (
-    <AuthContextProvider onUser={(u) => setUser(u)} user={user}>
+    <AuthContextProvider
+      onUser={(u) => setUser(u)}
+      user={user}
+      // addUser={addUserBiometric}
+      ssa={showSecurityAlert}>
       <Stack.Navigator screenOptions={{headerShown: false}}>
         {user ? (
           <Stack.Screen name="Home" component={Home} />
@@ -44,110 +178,3 @@ export default App;
  * @format
  * @flow strict-local
  */
-
-// import React from 'react';
-// import {
-//   SafeAreaView,
-//   StyleSheet,
-//   ScrollView,
-//   View,
-//   Text,
-//   StatusBar,
-// } from 'react-native';
-
-// import {
-//   Header,
-//   LearnMoreLinks,
-//   Colors,
-//   DebugInstructions,
-//   ReloadInstructions,
-// } from 'react-native/Libraries/NewAppScreen';
-
-// const App: () => React$Node = () => {
-//   return (
-//     <>
-//       <StatusBar barStyle="dark-content" />
-//       <SafeAreaView>
-//         <ScrollView
-//           contentInsetAdjustmentBehavior="automatic"
-//           style={styles.scrollView}>
-//           <Header />
-//           {global.HermesInternal == null ? null : (
-//             <View style={styles.engine}>
-//               <Text style={styles.footer}>Engine: Hermes</Text>
-//             </View>
-//           )}
-//           <View style={styles.body}>
-//             <View style={styles.sectionContainer}>
-//               <Text style={styles.sectionTitle}>Step One</Text>
-//               <Text style={styles.sectionDescription}>
-//                 Edit <Text style={styles.highlight}>App.js</Text> to change this
-//                 screen and then come back to see your edits.
-//               </Text>
-//             </View>
-//             <View style={styles.sectionContainer}>
-//               <Text style={styles.sectionTitle}>See Your Changes</Text>
-//               <Text style={styles.sectionDescription}>
-//                 <ReloadInstructions />
-//               </Text>
-//             </View>
-//             <View style={styles.sectionContainer}>
-//               <Text style={styles.sectionTitle}>Debug</Text>
-//               <Text style={styles.sectionDescription}>
-//                 <DebugInstructions />
-//               </Text>
-//             </View>
-//             <View style={styles.sectionContainer}>
-//               <Text style={styles.sectionTitle}>Learn More</Text>
-//               <Text style={styles.sectionDescription}>
-//                 Read the docs to discover what to do next:
-//               </Text>
-//             </View>
-//             <LearnMoreLinks />
-//           </View>
-//         </ScrollView>
-//       </SafeAreaView>
-//     </>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   scrollView: {
-//     backgroundColor: Colors.lighter,
-//   },
-//   engine: {
-//     position: 'absolute',
-//     right: 0,
-//   },
-//   body: {
-//     backgroundColor: Colors.white,
-//   },
-//   sectionContainer: {
-//     marginTop: 32,
-//     paddingHorizontal: 24,
-//   },
-//   sectionTitle: {
-//     fontSize: 24,
-//     fontWeight: '600',
-//     color: Colors.black,
-//   },
-//   sectionDescription: {
-//     marginTop: 8,
-//     fontSize: 18,
-//     fontWeight: '400',
-//     color: Colors.dark,
-//   },
-//   highlight: {
-//     fontWeight: '700',
-//   },
-//   footer: {
-//     color: Colors.dark,
-//     fontSize: 12,
-//     fontWeight: '600',
-//     padding: 4,
-//     paddingRight: 12,
-//     textAlign: 'right',
-//   },
-// });
-
-// export default App;

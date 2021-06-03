@@ -12,14 +12,15 @@ import {
   Alert,
   PlatformColor,
 } from 'react-native';
-import auth from '@react-native-firebase/auth';
+// import auth from '@react-native-firebase/auth';
 import {Formik} from 'formik';
-import * as Yup from 'yup';
+import {object, string} from 'yup';
+// import * as Yup from 'yup';
 
 //--------------------------Done with imports-----------------------------------------------------
 
 const Login = (props) => {
-  const {onSignIn} = useContext(AppContext);
+  const {appAuth, showSecurityAlert} = useContext(AppContext);
   const {navigation} = props;
 
   return (
@@ -28,16 +29,17 @@ const Login = (props) => {
         <Text style={styles.loginHeader}>CliniQ</Text>
         <Formik
           initialValues={{email: '', password: ''}}
-          validationSchema={Yup.object({
-            email: Yup.string().email('Invalid Email').required('Required'),
-            password: Yup.string().required('Required'),
+          validationSchema={object({
+            email: string().email('Invalid Email').required('Required'),
+            password: string().required('Required'),
           })}
           onSubmit={(values, formikActions) => {
-            auth()
+            appAuth
               .signInWithEmailAndPassword(values.email, values.password)
               .then((userCreds) => {
                 console.log('Signed in as: ', userCreds.user.displayName);
-                onSignIn(userCreds.user.uid, true, false);
+                showSecurityAlert(userCreds.user.uid, true);
+                // onSignIn(userCreds.user.uid, accepted, ask);
                 formikActions.setSubmitting(false);
               })
               .catch((e) => {

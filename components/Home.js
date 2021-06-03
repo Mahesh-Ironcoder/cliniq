@@ -1,7 +1,13 @@
 import CustomCamera from './CustomCamera';
 
 import React from 'react';
-import {View, Text, StyleSheet} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  PermissionsAndroid,
+  BackHandler,
+} from 'react-native';
 
 import {useIsFocused} from '@react-navigation/core';
 import {RNCamera} from 'react-native-camera';
@@ -37,9 +43,46 @@ const Home = (props) => {
 
   const handleRecording = async () => {
     try {
+      const camPer = await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.CAMERA,
+      );
+      const audiPer = await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+      );
+      if (!camPer && !audiPer) {
+        const CamGranted = await PermissionsAndroid.requestMultiple(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: 'CliniQ Camera Permission',
+            message: 'ClinQ needs access to your camera ',
+            // buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          },
+        );
+        const MicGranted = await PermissionsAndroid.requestMultiple(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: 'CliniQ Audio Permission',
+            message: 'ClinQ needs access to record audio ',
+            // buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          },
+        );
+        if (
+          CamGranted === PermissionsAndroid.RESULTS.GRANTED &&
+          MicGranted === PermissionsAndroid.RESULTS.GRANTED
+        ) {
+          console.log('You can use the camera and record audio');
+        } else {
+          console.log('Camera permission denied');
+          BackHandler.exitApp();
+        }
+      }
       let recordData = await camRef.current.recordAsync({
-        quality: RNCamera.Constants.VideoQuality['480p'],
-        maxDuration: 8,
+        quality: RNCamera.Constants.VideoQuality['1080p'],
+        maxDuration: 10,
         orientation: RNCamera.Constants.Orientation.portrait,
         fixOrientation: true,
       });
@@ -56,43 +99,18 @@ const Home = (props) => {
   function HomeScreen() {
     return (
       <View style={homescreenStyles.homeContainer}>
-        {/* <CustomCamera
+        <CustomCamera
           ref={camRef}
           onScan={handleScan}
           hideControls={isScanning}
-        /> */}
+        />
         {isScanning ? (
           <VitalsCardContainer
             onReTest={handleReTest}
-            // pictureData={handleRecording}
+            pictureData={handleRecording}
             // cam={camRef.current}
           />
-        ) : (
-          <View style={homescreenStyles.hmBtnGrp}>
-            <AppButton
-              style={{
-                flexBasis: 200,
-                backgroundColor: '#F2AB1D',
-              }}
-              textStyle={{color: 'white', fontSize: 18}}
-              title="Start Scan"
-              rounded
-              onPress={handleScan || null}
-            />
-            <Icon.Button
-              name="camera-rear"
-              size={25}
-              backgroundColor="#37BCDF"
-              color="white"
-              // onPress={handleFlip}
-              >
-              Flip
-            </Icon.Button>
-            <Text style={homescreenStyles.bottomText}>
-              Click on start to begin the process
-            </Text>
-          </View>
-        )}
+        ) : null}
       </View>
     );
   }
@@ -197,3 +215,28 @@ const homescreenStyles = StyleSheet.create({
 });
 
 export default Home;
+
+/* <View style={homescreenStyles.hmBtnGrp}>
+            <AppButton
+              style={{
+                flexBasis: 200,
+                backgroundColor: '#F2AB1D',
+              }}
+              textStyle={{color: 'white', fontSize: 18}}
+              title="Start Scan"
+              rounded
+              onPress={handleScan || null}
+            />
+            <Icon.Button
+              name="camera-rear"
+              size={25}
+              backgroundColor="#37BCDF"
+              color="white"
+              // onPress={handleFlip}
+              >
+              Flip
+            </Icon.Button>
+            <Text style={homescreenStyles.bottomText}>
+              Click on start to begin the process
+            </Text>
+          </View> */
