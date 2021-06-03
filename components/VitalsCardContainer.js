@@ -172,7 +172,6 @@ const VitalsCardContainer = (props) => {
   };
 
   React.useEffect(() => {
-    let socket = new WebSocket('wss://www.example.com/socketserver');
     const onConvert = (obj) => {
       console.log(obj.msg);
       sendFrame('photo', 0);
