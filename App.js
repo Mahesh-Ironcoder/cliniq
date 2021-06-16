@@ -4,12 +4,11 @@ import Login from './components/Login';
 import Home from './components/Home';
 import CreateAccount from './components/CreateAccount';
 import ResetPassword from './components/ResetPassword';
+import AuthContextProvider from './contexts/AuthContext';
 
 import {createStackNavigator} from '@react-navigation/stack';
 
 import React, {useState, useEffect} from 'react';
-
-import AuthContextProvider from './contexts/AuthContext';
 
 import {BackHandler, Alert} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';

@@ -4,8 +4,8 @@ import {
   useWindowDimensions,
   View,
   Animated,
-  NativeEventEmitter,
-  NativeModules,
+  // NativeEventEmitter,
+  // NativeModules,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import FullVitals from './FullVitals';
@@ -13,10 +13,13 @@ import FullVitals from './FullVitals';
 import ProgressBar from './ProgressBar';
 import Vitals from './Vitals';
 
-import {readFile} from 'react-native-fs';
+// import { readFile } from 'react-native-fs';
 
-import JavaCV from '../src/nativeModules/JavaCV';
+// import JavaCV from '../src/nativeModules/JavaCV';
 import {AppContext} from '../contexts/AuthContext';
+// import rtc from "react-native-webrtc"
+
+// rtc.
 
 const data = {
   'Blood Pressure': [
@@ -43,6 +46,7 @@ const VitalsCardContainer = (props) => {
   const {appAuth} = useContext(AppContext);
   const screen = useWindowDimensions();
   const drawerAnim = React.useState(new Animated.Value(0))[0];
+
   const slideUP = () => {
     Animated.timing(drawerAnim, {
       toValue: 1,
@@ -59,12 +63,122 @@ const VitalsCardContainer = (props) => {
     }).start();
   };
 
-  const updateVitals = (respText) => {
+  React.useEffect(() => {
+    if (props.pictureData) {
+      setVitals(props.pictureData);
+      setLoading(false);
+    }
+  }, [props.pictureData]);
+
+  return (
+    <>
+      <View style={styles.container}>
+        {loading ? (
+          <ProgressBar
+            style={styles.progressbar}
+            width={null}
+            height={21}
+            borderRadius={15}
+            color="rgba(55, 188, 223, 1)"
+            unfilledColor="rgba(250, 250, 250, 0.3)"
+            borderColor="transparent"
+            text="Detecting..."
+          />
+        ) : (
+          <>
+            <ProgressBar
+              style={styles.progressbar}
+              width={null}
+              height={21}
+              borderRadius={15}
+              color="rgba(55, 188, 223, 1)"
+              unfilledColor="rgba(250, 250, 250, 0.3)"
+              borderColor="transparent"
+              text="Loading Results"
+            />
+            <Vitals data={vitals} />
+            <Icon
+              name="expand-less"
+              size={30}
+              color="#fff"
+              style={styles.drawer}
+              onPress={slideUP}
+            />
+          </>
+        )}
+      </View>
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            transform: [
+              {
+                translateY: drawerAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [screen.height + 100, 0],
+                }),
+              },
+            ],
+          },
+        ]}>
+        <Icon
+          name="cancel"
+          size={30}
+          color="#fff"
+          style={{
+            zIndex: 1000,
+            alignSelf: 'flex-end',
+            margin: 30,
+          }}
+          onPress={slideDown}
+        />
+
+        <FullVitals
+          data={vitals}
+          onReTest={() => {
+            slideDown();
+            props.onReTest();
+          }}
+        />
+      </Animated.View>
+    </>
+  );
+};
+
+export default VitalsCardContainer;
+
+const styles = StyleSheet.create({
+  container: {
+    width: '100%',
+    justifyContent: 'flex-end',
+    position: 'absolute',
+    bottom: 1,
+  },
+  progressbar: {
+    margin: 10,
+  },
+  drawer: {
+    backgroundColor: 'rgba(250,250,250,0.5)',
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
+    height: 25,
+    alignSelf: 'center',
+  },
+  frame: {
+    position: 'absolute',
+    top: 20,
+    left: 5,
+  },
+});
+
+/*
+
+const updateVitals = (respText) => {
     // console.log('Response text', respText);
     let data = {};
     data['Blood Pressure'] = [
-      {title: 'Systolic', value: respText[3].value},
-      {title: 'Diastolic', value: respText[4].value},
+      { title: 'Systolic', value: respText[3].value },
+      { title: 'Diastolic', value: respText[4].value },
     ];
     data['Saturation'] = respText[0].value + '%';
     data['Heart Rate'] = respText[1].value + respText[1].prefix;
@@ -171,143 +285,42 @@ const VitalsCardContainer = (props) => {
     }
   };
 
-  React.useEffect(() => {
-    const onConvert = (obj) => {
-      console.log(obj.msg);
-      sendFrame('photo', 0);
-    };
-
-    const onError = (msg) => {
-      console.log(msg);
-    };
-
-    const eventEmitter = new NativeEventEmitter(NativeModules.RNJavaCVLib);
-    const eventListener = eventEmitter.addListener('frameEvent', (event) => {
-      // if (event.lastReq) {
-      //   sendFrame('photo', 0);
-      // } else {
-      //   sendFrame(event.uriPath);
-      // }
-      console.log('Result is: ', event.result);
-    });
-    props
-      .pictureData()
-      .then((video) => {
-        console.log('Video rec completed and sending for frame extraction...');
-        setLoading(false);
-        JavaCV.getFramesFromVideo(video.uri, onError, onConvert);
-      })
-      .catch((e) => {
-        console.log('@VitalsCardContainer - Error in getting the picture data');
+    React.useEffect(() => {
+      const onConvert = (obj) => {
+        console.log(obj.msg);
+        sendFrame('photo', 0);
+      };
+  
+      const onError = (msg) => {
+        console.log(msg);
+      };
+  
+      const eventEmitter = new NativeEventEmitter(NativeModules.RNJavaCVLib);
+      const eventListener = eventEmitter.addListener('frameEvent', (event) => {
+        // if (event.lastReq) {
+        //   sendFrame('photo', 0);
+        // } else {
+        //   sendFrame(event.uriPath);
+        // }
+        console.log('Result is: ', event.result);
       });
-
-    return () => {
-      console.log('Component is destroyed...Removing the event listener');
-      sendFrame('photo', 0);
-      eventListener.remove();
-    };
-  }, []);
-
-  return (
-    <>
-      <View style={styles.container}>
-        {loading ? (
-          <ProgressBar
-            style={styles.progressbar}
-            width={null}
-            height={21}
-            borderRadius={15}
-            color="rgba(55, 188, 223, 1)"
-            unfilledColor="rgba(250, 250, 250, 0.3)"
-            borderColor="transparent"
-            text="Detecting..."
-          />
-        ) : (
-          <>
-            <ProgressBar
-              style={styles.progressbar}
-              width={null}
-              height={21}
-              borderRadius={15}
-              color="rgba(55, 188, 223, 1)"
-              unfilledColor="rgba(250, 250, 250, 0.3)"
-              borderColor="transparent"
-              text="Loading Results"
-            />
-            <Vitals data={vitals} />
-            <Icon
-              name="expand-less"
-              size={30}
-              color="#fff"
-              style={styles.drawer}
-              onPress={slideUP}
-            />
-          </>
-        )}
-      </View>
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFill,
-          {
-            transform: [
-              {
-                translateY: drawerAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [screen.height + 100, 0],
-                }),
-              },
-            ],
-          },
-        ]}>
-        <Icon
-          name="cancel"
-          size={30}
-          color="#fff"
-          style={{
-            zIndex: 1000,
-            alignSelf: 'flex-end',
-            margin: 30,
-          }}
-          onPress={slideDown}
-        />
-
-        <FullVitals
-          data={vitals}
-          onReTest={() => {
-            slideDown();
-            props.onReTest();
-          }}
-        />
-      </Animated.View>
-    </>
-  );
-};
-
-export default VitalsCardContainer;
-
-const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-    justifyContent: 'flex-end',
-    position: 'absolute',
-    bottom: 1,
-  },
-  progressbar: {
-    margin: 10,
-  },
-  drawer: {
-    backgroundColor: 'rgba(250,250,250,0.5)',
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
-    height: 25,
-    alignSelf: 'center',
-  },
-  frame: {
-    position: 'absolute',
-    top: 20,
-    left: 5,
-  },
-});
+      props
+        .pictureData()
+        .then((video) => {
+          console.log('Video rec completed and sending for frame extraction...');
+          setLoading(false);
+          JavaCV.getFramesFromVideo(video.uri, onError, onConvert);
+        })
+        .catch((e) => {
+          console.log('@VitalsCardContainer - Error in getting the picture data');
+        });
+  
+      return () => {
+        console.log('Component is destroyed...Removing the event listener');
+        sendFrame('photo', 0);
+        eventListener.remove();
+      };
+    }, []); */
 
 /* React.useEffect(() => {
     // setTimeout(() => {

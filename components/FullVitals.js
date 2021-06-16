@@ -2,25 +2,25 @@ import React from 'react';
 import {Alert, Image, StyleSheet, Text, View} from 'react-native';
 import AppButton from './AppButton';
 import Vitals from './Vitals';
-import {readFile, DocumentDirectoryPath} from 'react-native-fs';
+// import {readFile, DocumentDirectoryPath} from 'react-native-fs';
 
 const FullVitals = (props) => {
   const [profileImg, setProfileImg] = React.useState('');
-  React.useEffect(() => {
-    let id = setTimeout(async () => {
-      try {
-        let img = await readFile(
-          DocumentDirectoryPath + '/frames/frame010.png',
-          'base64',
-        );
-        setProfileImg('data:image/png;base64,' + img);
-        clearTimeout(id);
-      } catch (e) {
-        console.log('Error taking DP', e);
-        clearTimeout(id);
-      }
-    }, 2000);
-  }, []);
+  // React.useEffect(() => {
+  //   let id = setTimeout(async () => {
+  //     try {
+  //       let img = await readFile(
+  //         DocumentDirectoryPath + '/frames/frame010.png',
+  //         'base64',
+  //       );
+  //       setProfileImg('data:image/png;base64,' + img);
+  //       clearTimeout(id);
+  //     } catch (e) {
+  //       console.log('Error taking DP', e);
+  //       clearTimeout(id);
+  //     }
+  //   }, 2000);
+  // }, []);
 
   const {data: vData} = props;
 
@@ -36,7 +36,7 @@ const FullVitals = (props) => {
   // const FullVitalsComp = React.useMemo()
   return (
     <View style={[StyleSheet.absoluteFill, styles.container]}>
-      <DisplayAvatar />
+      {/* <DisplayAvatar /> */}
       <View style={styles.vitalContainer}>
         <Vitals data={vData} />
         <View style={styles.btnGrp}>
