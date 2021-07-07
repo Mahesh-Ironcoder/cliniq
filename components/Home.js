@@ -95,7 +95,7 @@ const Home = (props) => {
           break;
         case 'result':
           console.log('Recieved result from the peer: ', data.result);
-          handleResult(JSON.parse(data.result));
+          handleResult(JSON.parse(JSON.parse(data.result).data));
           break;
 
         default:
